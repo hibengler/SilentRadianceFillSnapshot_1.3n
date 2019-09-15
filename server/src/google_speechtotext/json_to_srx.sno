@@ -1,0 +1,81 @@
+	sz = span(' 	') | ''
+	
+	pat = array('10')
+	pat[1] = '|'
+	pat[2] = ' '
+	pat[3] = ' '
+	pat[4] = ' '
+	pat[5] = ' '
+	pat[6] = '.'
+	pat[7] = ' '
+	pat[8] = ' '
+	pat[9] = ' '
+	pat[10] = '.'
+	
+
+	output = '#'
+	c = 0
+	t = 0
+	topstring = ''
+	currentstring = ''
+
+loop	x = input	:f(done)
+	x sz '"startTime":' sz '"' break('s') . the_starttime	:s(loop)
+	x sz '"word":' sz '"' break('"') . the_word	:s(gotone)
+	:(loop)
+
+gotone	
+	&anchor = 0
+	the_starttime '.' = ''   :f(nodot)
+	the_starttime '0' rpos(0) = ''
+	the_starttime = convert(the_starttime,'int') 
+	:(starttime_fixed)
+	
+nodot	the_starttime = the_starttime * 100	
+	
+starttime_fixed	
+	&anchor = 1
+	the_starttime = the_starttime + 0
+	
+l2	lt(c,t) 	:f(d2)
+	t = t + 1
+	d = remdr(t,10)
+	topstring = topstring pat[d + 1]	:(l2)
+d2	
+
+l3	lt(t,the_starttime)	:f(d3)
+	c = c + 1
+	t = t + 1
+	currentstring = currentstring ' '
+	
+	d = remdr(t,10)
+	topstring = topstring pat[d + 1]
+	
+	gt(size(currentstring),350)  :f(l3)
+	&anchor = 0
+	topstring any(&alphabet) rpos(0) = '.'
+	&anchor = 1
+	
+	output = topstring
+	currentstring = trim(currentstring)
+	ident(currentstring,'')          :s(nocurrent)
+	output = currentstring
+nocurrent
+	topstring = ''
+	currentstring = ''
+	:(l3)
+
+
+d3	
+	currentstring = currentstring the_word
+	c = c + size(the_word)
+	:(loop)
+
+
+done	output = topstring
+	currentstring = trim(currentstring)
+	ident(currentstring,'')          :s(nocurrent2)
+	output = currentstring
+nocurrent2
+
+end

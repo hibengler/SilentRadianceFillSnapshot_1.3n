@@ -1,0 +1,32 @@
+everything is space separated, except the first column that is tab separated.
+
+Information:
+
+old/current frame_no ctime_sec ctime_usec beat_interval_in_milliseconds where_in_tempo commanded_background_color
+   pitch microseconds db_level folded_flags has_beat has_onset pitch_rgb_value
+
+
+Where:
+old/current states "old" if this frame was effectively in the past, or "current" when the frame is now.
+             missed packets, or too much computing might be why there are old packets.
+	     If a packet is old, the next four packets have no value (set to 0)
+
+	     
+
+
+
+frame_no is the frame number from the server.
+
+
+ctime_sec is the current time in seconds, from the clients point of view.
+ctime_usec is the current time in microseconds, from the clients point of view.
+beat_interval_in_milliseconds the interval of each beat in milliseconds. Can be used to get tempo.
+where_in_tempo is the approximate point (from 0 to 1) where the music is in the tempo.
+commanded_background_color - this is the background color that the DJ has set - usually 000000
+pitch - the general pitch of the sample - in cycles per second.
+microseconds - I think this is the time in microseconds with seconds added. This is from the server.
+db_level - decibel level of the music.
+folded_flags - these are flags of the last fur flag sections all ored together.  Helps find beat onset and tempo better.
+has_beat - set to 2 if there is a tempo beat
+has_onset - set to 1 if there is a beat onset.
+pitch_rgb_value - hex rgb value determined by the pitch

@@ -1,0 +1,138 @@
+*
+*
+* -u 4 2 44
+* beats per meaure + start measure 
+
+
+	ticks_per_beat_counts = table()
+	lines = table()
+	line_number = 0
+	
+	stuff = host(0)
+	stuff '-u ' = ''  
+	
+	stuff span(' 	') = ''
+	stuff span('0123456789') . beats_per_measure = ''
+	stuff span(' 	') = ''
+	stuff span('0123456789') . start_measure = ''
+	
+	
+	ident(beats_per_measure,'')	:f(empty1)
+	beats_per_measure = 4	
+empty1
+	ident(start_measure,'')	:f(empty2)
+	start_measure = 2
+empty2
+	
+	terminal = 'bpm ' beats_per_measure
+	terminal = 'staart_measure ' start_measure
+	
+	best_ticks_per_beat_counts = 0
+	best_ticks_per_beat = 0
+	
+	
+	
+loop	line_number = line_number + 1
+	x	= input	:f(done1)
+	lines[line_number] = x
+iloop
+	ident(x,'') :s(loop)
+	x arbno(any(' .')) . part1 '|' . part2 = '' :f(weird1)
+	size1 = size(part1)
+	ident(ticks_per_beat_counts[size1],'')	:f(ziaped)
+	ticks_per_beat_counts[size1] = 0	
+ziaped	
+	ticks_per_beat_counts[size1] = ticks_per_beat_counts[size1] + 1
+	gt(ticks_per_beat_counts[size1],best_ticks_per_beat_counts)	:s(new_best)
+	:(iloop)
+	
+	
+new_best
+	best_ticks_per_beat_counts = ticks_per_beat_counts[size1]
+	best_ticks_per_beat = size1
+	:(iloop)
+	
+weird1
+	terminal = 'weird1 ' x
+	:(loop)
+	
+
+done1	terminal = 'best bpm is ' best_ticks_per_beat
+	
+	
+	
+	
+	
+	
+	line_number2 = 0
+	beat_count = 0
+	y = ''
+	x = ''
+	current_max_count = start_measure
+
+
+loop2	line_number2 = line_number2 + 1
+	gt(line_number2,line_number)	:s(done2)
+	x = x lines[line_number2]
+*	terminal = 'X' x
+iloop2	
+	ident(x,'') :s(check_line)
+	x arbno(any(' .')) . part1 '|' . part2 = '' :f(hmm2)
+	eq(line_number2,1)      :s(just_right)
+	size1 = size(part1)
+*	terminal = 'size1 ' size1 ' btpb ' best_ticks_per_beat
+	bigsize = (best_ticks_per_beat * 115) / 100
+	smallsize = (best_ticks_per_beat * 8) / 10
+*	terminal = 'bigsize ' bigsize ' smallsize ' smallsize
+	gt(size1,bigsize)		:s(too_far)
+	lt(size1,smallsize)		:s(too_short)
+just_right	
+*	terminal = 'just right ' part1
+	y = y part1 '|'
+	beat_count = beat_count + 1
+	ge(beat_count,current_max_count)	:s(outy)
+	:(iloop2)
+	
+	
+	
+				
+	
+	
+outy 	
+	output = y
+	y = ''
+	beat_count = 0
+	current_max_count = beats_per_measure
+	:(iloop2)
+	
+	
+too_short
+*	terminal = ' too short ' part1
+	x = part1 ' ' x
+	:(iloop2)
+		
+too_far	
+*	terminal = ' too far ' part1 '|'
+	x = part1 '|' x
+	x len(best_ticks_per_beat - 1) . part1 any(' .|') = part1 '|' :s(iloop2)
+	terminal = 'fff' :(end)
+	
+hmm2
+*	terminal = 'hmmm2'
+	:(loop2)
+
+
+	
+		
+check_line
+	:(loop2)
+
+	
+	
+done2
+	y = y x
+	ident(y,'')	:s(end)
+	output = y
+
+end
+

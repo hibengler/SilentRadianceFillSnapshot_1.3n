@@ -1,0 +1,157 @@
+
+
+
+
+* this just extracts the source text.  It captures the log info for posterity
+* it expects the domain name
+* sbl convert_sr_error_log_into_sql.sbl </tmp/l | fieldu 1 |mysql -u hib -s sr
+* bash get_all_sr_error_log | tee original_error_log.2018_03_21 | sbl convert_sr_error_log_into_sql.sbl | fieldu 1 | mysql -u hib -s sr
+*
+
+
+        &anchor = 0
+
+        word = span('abcdefghijklmnopqrstuvwxyz')
+
+        all_but_vertical_bar = &alphabet
+        all_but_vertical_bar '|' = ''
+        xword = ( span(all_but_vertical_bar) | '' )
+        acode = 'sd' | 'cd'
+	anumber = any('0123456789')
+        number = span('0123456789')
+        ip_address = ( number '.' number '.' number '.' number ) | ''
+        unix_time = number
+        bar = '|'
+        position = number
+        session = xword
+        extra1 = xword
+        extra2 = xword
+	stations = table()
+	uplast = ''
+
+        good_line = xword . the_station_name '|' xword . the_code '|' xword . the_unix_time '|' xword . the_length
++               '|' xword . the_command '|'
+
+        define('q(xin)') :(done_q)
+q       &anchor = 0
+	ident(xin,'') :s(qnull)
+ql0	xin "\\" = "fdsjkfslddsjkl" :s(ql0)
+ql1	xin "\'" = 'hsfdakfahfiue' :s(ql1)
+ql2	xin "'" = 'hsfdakfahfiue' :s(ql2)
+ql3	xin 'hsfdakfahfiue' = "''" :s(ql3)
+ql4	xin "\" rpos(0) = ''   :s(ql4)
+ql5 	xin "fdsjkfslddsjkl" = "\\"	:s(ql5)
+	&anchor = 1
+	q = "'" xin "'"
+        :(return)
+qnull	q = 'NULL'
+	:(return)
+done_q
+
+        define('r(xin)') :(done_r)
+r       ident(xin,'') :s(rnull)
+	r = xin
+        :(return)
+rnull
+	r = 'NULL'
+        :(return)
+	
+done_r
+
+        define('d(xin)p1,p2') :(done_d)
+d       ident(xin,'') :s(dnull)
+	xin number . p1 '.' ( anumber anumber anumber anumber anumber anumber ) . p2 rpos(0) 	= p1 p2	:s(dok)
+	xin number . p1 '.' ( anumber anumber anumber anumber anumber ) . p2 rpos(0) 		= p1 p2 '0'	:s(dok)
+	xin number . p1 '.' ( anumber anumber anumber anumber ) . p2 rpos(0) 			= p1 p2  '00'	:s(dok)
+	xin number . p1 '.' ( anumber anumber anumber ) . p2 rpos(0) 				= p1 p2 '000'	:s(dok)
+	xin number . p1 '.' ( anumber anumber ) . p2 rpos(0) 					= p1 p2 '0000'	:s(dok)
+	xin number . p1 '.' ( anumber ) . p2 rpos(0) 						= p1 p2 '00000'	:s(dok)
+	xin number . p1 '.' '' . p2 rpos(0) 							= p1 p2 '000000'	:s(dok)
+	xin number . p1 '' . p2 rpos(0)								= p1 p2  '000000'	:s(dok)
+	d = 'cast((' xin '*1000000.) as unsigned)'
+        :(return)
+
+dok
+	d = xin
+	:(return)
+dnull
+	d = 'NULL'
+        :(return)
+	
+done_d
+
+        &anchor = 1
+	prev_start_unix_time = ''
+	prev_filename = ''
+        output = 'SET SESSION character_set_client = latin1;'
+	output = 'SET SESSION character_set_results = latin1;'
+	output = 'SET SESSION collation_connection = latin1_swedish_ci;'
+				
+
+loop    x = input       :f(endd)
+        x good_line     :f(loop)
+
+	the_filename = the_command
+	the_filename break(' ') span(' ') = ''
+
+	ident(stations[the_station_name],'1') :s(skip_station)	
+* insert sr_stations
+        output = '/*00*/insert into sr_stations(station_name) select ' q(the_station_name) ' where not exists (select 1 from sr_stations where station_name = ' q(the_station_name) ');'
+	stations[the_station_name] = '1'
+skip_station
+
+* sr_radio_plays
+        the_code 'sm'   :f(session_cd)
+
+	ident(prev_start_unix_time,'') :f(we_got_prev)
+	output = '/*01*/ update  sr_radio_plays set end_unix_time = least( start_unix_time+' d(length) ', ' d(the_unix_time) ') where '
++	  'station_name = ' q(the_station_name) ' and end_unix_time is null and start_unix_time > ' d(the_unix_time) '-10000000000;'
+	:(contxxx)
+
+we_got_prev
+
+	ident(uplast,'') :s(skip_uplast)
+	output = uplast
+	uplast = ''
+skip_uplast	
+
+
+	output = '/*02*/ update  sr_radio_plays set end_unix_time = ' d(the_unix_time) 
++		' where  start_unix_time = ' d(prev_start_unix_time) ' and filename = ' q(prev_filename) ' and station_name = ' q(the_station_name)  ';'
+contxxx
+
+        output = '/*03*/insert into sr_radio_plays(station_name,filename,start_unix_time,end_unix_time,length,command) '
++               'select ' q(the_station_name) ',' q(the_filename) ',' d(the_unix_time) ',null,' d(the_length) ',' q(the_command) 
++                ' where not exists (select 1 from sr_radio_plays where start_unix_time = '  d(the_unix_time) 
++		' and filename = ' q(the_filename) ' and station_name = '  q(the_station_name) ');'
+	prev_start_unix_time = the_unix_time
+	prev_filename = the_filename
+        :(loop)
+session_cd
+	 ident(prev_start_unix_time,'') :s(loop)
+        uplast = '/*04*/ update sr_radio_plays set end_unix_time = greatest(ifnull(end_unix_time,start_unix_time),' d( the_unix_time ) ')'               
++                  ' where start_unix_time = ' d(prev_start_unix_time) ' and filename = ' q(prev_filename) ' and station_name = '  q(the_station_name) ';'
+        :(loop)
+
+
+endd
+	ident(uplast,'') :s(skip_uplast2)
+	output = uplast
+	uplast = ''
+skip_uplast2	
+
+end
+
+
+
+
+
+
+*sr000.silentradiance.com|sm|1516297374.706250|107.000000|mplayer './hib/yellow_submarine.wav'||||||||||||
+*sr000.silentradiance.com|fm|1516297476.382636|0.000000|mplayer './hib/yellow_submarine.wav'||||||||||||
+*sr000.silentradiance.com|sm|1516297476.382636|7.000000|mplayer './hib/technical_math.wav'||||||||||||
+*sr000.silentradiance.com|fm|1516297520.669557|8.000000|mplayer './hib/right_back_goldfish.wav'||||||||||||
+*sr000.silentradiance.com|sm|1516297520.669557|77.000000|mplayer './hib/bluesky.wav'||||||||||||
+*sr000.silentradiance.com|fm|1516297599.498155|0.000000|mplayer './hib/bluesky.wav'||||||||||||
+*sr000.silentradiance.com|sm|1516297599.498155|6.000000|mplayer './hib/nevertooearlyforpsytrance.wav'||||||||||||
+

@@ -1,0 +1,650 @@
+/*
+Silent Radiance wifi broadcast for digital silent disco.
+Copyright (C) 2017-2019 Hibbard M. Engler
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License   
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
+
+
+
+
+
+
+/*$Revision: 1.10 $*/
+
+#ifdef ANDROID
+#include <jni.h>
+#endif
+
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "glue.h"
+#include "default.h"
+#include "packet_summary.h"
+#include "display_set.h"
+#include "display_main.h"
+#include "helper.h"
+#include "letters_render_opengles2.h"
+
+
+static lcontext *lc;
+
+
+
+
+
+
+ 
+
+
+
+static GLuint gProgram;
+
+
+#define NUM_FROM_CURRENT 200
+#define NUM_TOTAL 500
+static float freqs[NUM_TOTAL*6];
+static float db_levels[NUM_TOTAL*6];
+static char average_note_string[50];
+
+static GLfloat vertices[NUM_TOTAL*8]; // should be 2 or something
+static GLfloat colores[NUM_TOTAL*8];
+//#define WORLD_display_staff_A "A"
+//#define WORLD_display_staff_Bb "Bb"
+//#define WORLD_display_staff_B "B"
+//#define WORLD_display_staff_C "C"
+//#define WORLD_display_staff_C_hash_ "C#"
+//#define WORLD_display_staff_D "D"
+//#define WORLD_display_staff_E "E"
+//#define WORLD_display_staff_F "F"
+//#define WORLD_display_staff_F_hash_ "F#"
+//#define WORLD_display_staff_G "G"
+//#define WORLD_display_staff_Ab "Ab"
+static const char *avg_note_names[12] = {WORLD_display_staff_A,WORLD_display_staff_Bb,WORLD_display_staff_B,WORLD_display_staff_C,WORLD_display_staff_C_hash_,WORLD_display_staff_D,WORLD_display_staff_E,WORLD_display_staff_F,WORLD_display_staff_F_hash_,WORLD_display_staff_G,WORLD_display_staff_Ab};
+//#define WORLD_display_staff__minus_1 "-1"
+//#define WORLD_display_staff_0 "0"
+//#define WORLD_display_staff_1 "1"
+//#define WORLD_display_staff_2 "2"
+//#define WORLD_display_staff_3 "3"
+//#define WORLD_display_staff_4 "4"
+//#define WORLD_display_staff_5 "5"
+//#define WORLD_display_staff_6 "6"
+//#define WORLD_display_staff_7 "7"
+//#define WORLD_display_staff_8 "8"
+static const char *avg_octave_names[] = {WORLD_display_staff__minus_1,WORLD_display_staff_0,WORLD_display_staff_1,WORLD_display_staff_2,WORLD_display_staff_3,WORLD_display_staff_4,WORLD_display_staff_5,WORLD_display_staff_6,WORLD_display_staff_7,WORLD_display_staff_8
+//#define WORLD_display_staff_9 "9"
+//#define WORLD_display_staff_10 "10"
+//#define WORLD_display_staff_11 "11"
+//#define WORLD_display_staff_12 "12"
+//#define WORLD_display_staff_13_plus_ "13+"
+    ,WORLD_display_staff_9,WORLD_display_staff_10,WORLD_display_staff_11,WORLD_display_staff_12,WORLD_display_staff_13_plus_};
+static int namaste_432; // song seems to be one with the universe
+static int avg_note=-1; //Average note from 0 to like 120? We convert to note name
+static int back_distance=0; // distance before current 
+static int forward_distance=0; // distance after current
+static int number_of_samples_to_look_at;
+static int from_frame;
+static int to_frame;
+
+
+
+
+
+static GLuint mvpLoc;
+static GLuint positionLoc;
+static GLuint colorLoc;
+static glMatrix mprojectionMat1;
+static glMatrix *projectionMat1=&mprojectionMat1;
+//static glMatrix mprojectionMat2;
+//static glMatrix *projectionMat2=&mprojectionMat2;
+static glMatrix mmodelviewMat1;
+static glMatrix *modelviewMat1=&mmodelviewMat1;
+
+//static glMatrix *appliedModelTranformMatrix;
+ 
+static GLint surface_width, surface_height;
+
+
+//projection
+static GLfloat near = -20.0f;
+static GLfloat far  = 20.0f;
+static GLfloat yFOV  = 75.0f;
+
+
+int staff_setupGraphics(int w, int h,int graphics_type) {
+if (!ran_setup_graphics_once_before)
+    {
+
+    // Create and link the vertex+fragment shader program
+    gProgram = sr_create_program(gStandard3dVertexVaryingColorShader,gStandard3dFragmentVaryingColorShader);
+
+    mvpLoc = glGetUniformLocation(gProgram, "u_mvpMat");
+    checkGlError("glGetUniformLoaction");
+    positionLoc = glGetAttribLocation(gProgram, "a_position");
+    checkGlError("glGetUniformLoaction");
+    colorLoc = glGetAttribLocation(gProgram, "a_color");
+    checkGlError("glGetUniformLoaction");
+    //}}} end env + shader setup
+    
+    
+    
+    // letters init
+    lc = linit_context(); // we will get our own letter context
+    
+    // vvv this is done in main_menu.c
+    //letters_opengles_setgraphics(one_color_program,colorHandle,positionLoc,mPositionHandle); // needs to be set up once, with a single color program
+    
+    }
+    
+    
+//{{{ main Model View matrix setup
+
+    //Model View matrix setup
+    //loads blank matrix
+    loadIdentity( modelviewMat1 );
+
+//}}} end modelView matrix setup
+    
+loadIdentity( projectionMat1 );
+surface_width = w;
+surface_height = h; 
+GLfloat aspect = (float)surface_width/(float)surface_height;
+GLfloat height = tanf( yFOV / 360.0f * M_PI ) * near;
+GLfloat width = height * aspect;
+ 
+
+frustumMatrix( projectionMat1, -width, width, -height, height, near,
+               far );
+if ( surface_width > surface_height ){
+    scaleMatrix( projectionMat1, (float)surface_height/(float)surface_width,
+                 1.0f, 1.0f );
+} else {
+    scaleMatrix( projectionMat1, 1.0f,
+                 (float)surface_width/(float)surface_height, 1.0f );
+}
+
+//}}} end projectionMat1 setup
+
+
+if (ran_setup_graphics_once_before==0)  {
+  //////////////////////////"permanent transforms"///////////////////
+
+  scaleMatrix(modelviewMat1,1.0f,1.0f,1.0f);
+  //translateMatrix( modelviewMat1,-0.0f,-0.4f,0.0f); //pretty good with current matrix setup
+  translateMatrix( modelviewMat1,-0.f,-0.4f,0.0f); 
+  rotationMatrix( modelviewMat1, 40.0f, 1.0f, 0.2f, 0.0f);
+
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+  }
+
+
+    return 1;
+}
+
+
+
+void staff_renderBackground(int screen,glMatrix *eye) {
+}
+
+
+
+
+
+void staff_step() {
+if (packet_summary.current_frame==-1) return;
+/* kinda derived from backward worm */
+int i;
+int q;
+  
+q = 0;
+back_distance = packet_summary.current_frame-packet_summary.no_gap_frame;
+if (back_distance<0) back_distance += PACKET_SUMMARY_SIZE;
+if (back_distance>NUM_FROM_CURRENT) back_distance = NUM_FROM_CURRENT;
+
+from_frame=packet_summary.current_frame-back_distance;
+if (from_frame <0) from_frame += PACKET_SUMMARY_SIZE;
+
+
+forward_distance = packet_summary.end_frame-packet_summary.current_frame;
+if (forward_distance<0) forward_distance += PACKET_SUMMARY_SIZE;
+
+to_frame = (packet_summary.current_frame+forward_distance);
+number_of_samples_to_look_at=to_frame-from_frame;
+	
+
+i = from_frame;
+q=0;
+
+float psum=0.f;
+int pcount=0;
+for (;i<to_frame;i++) { // and q<number_of_samples_to_look_at
+/*  frames[q]=i; //need? maybe the future*/
+  int index = (packet_summary.start_index + i - packet_summary.start_frame) % PACKET_SUMMARY_SIZE;
+  if (index<0) index += PACKET_SUMMARY_SIZE;
+  struct packet *p = packet_summary.packets+index;
+  
+//  logit("q %d	i %d	ind %d	end %d	h %d",q,i,index,packet_summary.end_frame,p->has_statistics);
+  if (p->has_statistics) {
+
+    float pitch=p->pitch;
+    if (pitch<1.) {
+      goto carry;
+      }
+ /* first constant is 1/log(2)*12 because ln(x)/ln(2) = log2(x) */
+           /* second constant makes 440 hertz the basis instead of 256 hz */
+    float plog = logf(pitch)*17.31234049066756088849f + 45.37631656229591524908;  /* first constant is 1/log(2) because ln(x)/ln(2) = log2(x) */
+
+    psum += plog;
+    pcount ++;
+
+    freqs[q]=plog;
+    db_levels[q] = p->db_level; //maybe do colors as per time and wheel it!
+/*
+piches are now in the range of 0 (13.75hz) to 132 (28160 - high A)
+*/
+    }
+  else {
+
+carry: 
+    if (q==0) {
+      freqs[q]=77.; /* indicates grey */
+      db_levels[q] = p->db_level;
+      }
+    else {
+      int qm1=q-1;
+      freqs[q]=freqs[qm1];
+      psum += freqs[q];
+      pcount ++;
+      }
+     
+    }
+  q++;
+  } // for 
+
+/* figure out if we are namaste */
+namaste_432=0;
+avg_note=-1;
+if (pcount) {
+  float avgf440 = psum / (float)(pcount);
+  float avgf432 = avgf440 -0.31766653633429271652f; // namaste freq 
+  
+  int avg440 = (int)avgf440;  
+  int avg432 = (int)avgf432;
+  float var440 = avgf440 - (float)avg440;
+  float var432 = avgf432 - (float)avg432;
+  if (var432 <var440) {
+    namaste_432=1;
+    avg_note = avg432;
+    }  
+  else {avg_note=avg440;}
+  } 
+
+
+/* make current average shown */
+if (avg_note!= -1) {
+  int abcdef =   avg_note % 12;
+  int octave=    avg_note/12;
+  if (octave>12) octave=12;
+//#define WORLD_display_staff_ ""
+  char *namastate=WORLD_display_staff_;
+  if (namaste_432) {
+//#define WORLD__432_Namaste " 432 Namaste"
+    namastate=WORLD__432_Namaste;
+    }
+//#define WORLD_display_staff__pct_s_pct_s_pct_s "%s%s%s"
+  sprintf(average_note_string,WORLD_display_staff__pct_s_pct_s_pct_s,avg_note_names[abcdef],
+      avg_octave_names[octave],namastate);
+        
+  }
+
+
+}
+
+
+
+static void draw_a_line(int one_color_program,int mColorHandle,
+int poshandle,float xfrom,float yfrom,float xto,float yto,float red,float green,float blue) {
+int n=0;
+float vertices[4];
+glUseProgram(one_color_program);
+checkGlError("glUseProgram1L");
+glLineWidth(1.f);
+
+glUniform4f(mColorHandle,red,green,blue,1.0f);
+checkGlError("glUniform4fwrL");
+
+vertices[n++]=xfrom;
+vertices[n++]=yfrom;
+vertices[n++]=xto;
+vertices[n++]=yto;
+
+glEnableVertexAttribArray(poshandle);
+checkGlError("glEnableVertexAttribArrayL");
+glVertexAttribPointer(poshandle, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+checkGlError("glVertexAttribPointer");
+
+glDrawArrays(GL_LINE_STRIP,0,n>>1);
+checkGlError("glDrawArraysL");
+
+
+glDisableVertexAttribArray(poshandle);
+checkGlError("glDrawElementsPL");
+}
+
+
+
+static void draw_a_triangle(int one_color_program,int mColorHandle,int poshandle,float xfrom,float yfrom,float xto,float yto,
+ float x3,float y3,
+  float red,float green,float blue) {
+int n=0;
+float vertices[6];
+glUseProgram(one_color_program);
+checkGlError("glUseProgram1L");
+glLineWidth(1.f);
+
+glUniform4f(mColorHandle,red,green,blue,1.0f);
+checkGlError("glUniform4fwrL");
+
+vertices[n++]=xfrom;
+vertices[n++]=yfrom;
+vertices[n++]=xto;
+vertices[n++]=yto;
+vertices[n++]=x3;
+vertices[n++]=y3;
+
+glEnableVertexAttribArray(poshandle);
+checkGlError("glEnableVertexAttribArrayL");
+glVertexAttribPointer(poshandle, 2, GL_FLOAT, GL_FALSE, 0, vertices);
+checkGlError("glVertexAttribPointer");
+
+glDrawArrays(GL_TRIANGLES,0,n>>1);
+checkGlError("glDrawArraysL");
+
+
+glDisableVertexAttribArray(poshandle);
+checkGlError("glDrawElementsPL");
+}
+
+
+
+
+
+
+
+void staff_renderFrame(int screen,glMatrix *eye) {    
+if (packet_summary.current_frame==-1) return;
+    glUseProgram(gProgram);
+    checkGlError("glUseProgram1");
+    glLineWidth(1.f);
+    
+    if (packet_summary.current_frame==-1) return;
+    
+    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, (GLfloat *)(&modelviewMat1));
+    checkGlError("glunif");
+
+
+    GLfloat x,y;
+ 	   x=0.f;y=0.f;
+
+   GLfloat *v = vertices;
+   GLfloat *c = colores;
+   int q;
+   fprintf(stderr,"number %d\n",number_of_samples_to_look_at);
+   for (q=0;q<number_of_samples_to_look_at;q++)  { // and q<number_samples_to_look_at
+     /* find the pitches to estimate colors */
+     /* find the position  for the x or z or whtever */
+     x = (float)q * 0.005 - 0.5;
+     y = freqs[q] * 0.005;
+     if ((q%30)==0) {
+       fprintf(stderr,"p %d %f,%f\n",q,x,y);
+       }
+     *v++ = x;
+//     *v++ = y-.3;
+     *v++ = y*0.1f;
+     *v++ = 0.f;
+     *v++ = 1.f;
+     *c++= 1.f;
+     *c++= 1.f;
+     *c++= 1.f;
+     *c++= 1.f;
+     }
+
+   for (q=0;q<number_of_samples_to_look_at;q++)  { // and q<number_samples_to_look_at
+     /* find the pitches to estimate colors */
+     /* find the position  for the x or z or whtever */
+     x = (float)q * 0.005 - 0.5;
+     y = db_levels[q] * 0.05;
+     if ((q%30)==0) {
+       fprintf(stderr,"v %d %f,%f\n",q,x,y);
+       }
+     *v++ = x;
+     *v++ = y+.3;
+     *v++ = 0.f;
+     *v++ = 1.f;
+     *c++= 1.f;
+     *c++= 1.f;
+     *c++= 0.2f;
+     *c++= 1.f;
+     }
+     
+    
+
+
+    
+    
+    
+
+
+	
+     glEnableVertexAttribArray(positionLoc);
+     checkGlError("glEnableVertexAttribArray");
+
+    int n=q;
+    glVertexAttribPointer(positionLoc, 4, GL_FLOAT, GL_FALSE, 0, vertices);
+    checkGlError("glVertexAttribPointer");
+         glEnableVertexAttribArray(colorLoc);
+    checkGlError("glEnableVertexAttribArray");
+    glVertexAttribPointer(colorLoc, 4, GL_FLOAT, GL_FALSE, 0, colores);
+     checkGlError("glEnableVertexAttribArradsdsy");
+     
+
+     glDrawArrays(GL_LINE_STRIP,0,n);
+     checkGlError("glDrawArrays");
+     glDisableVertexAttribArray(positionLoc);
+      checkGlError("glDrawElementsP");
+     glDisableVertexAttribArray(colorLoc);
+     checkGlError("glEnableVertexAttrsadibArray");
+    
+
+//    checkGlError("glVertexAttribPointer");
+//    glEnableVertexAttribArray(positionLoc);
+//    checkGlError("glEnableVertexAttribArray");
+//    glDrawArrays(GL_TRIANGLES, 0, 3);
+//    checkGlError("glDrawArrays");
+//    glDisableVertexAttribArray(positionLoc);
+fprintf(stderr,"q\n");
+int p =       letters_opengles_program_handle();
+int clrhandle=letters_opengles_color_handle();
+int poshandle=letters_opengles_position_handle();
+    glUseProgram(p);
+    checkGlError("glUseProgram1");
+ draw_a_line (p,clrhandle,poshandle,-0.2,-0.2 ,0.43,0.43 ,0.,0.5,1.);
+ draw_a_line (p,clrhandle,poshandle,0.4,0.0 ,-0.63,-0.63 ,0.,0.8,1.);
+
+/*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^Here^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^*/
+
+
+
+}
+
+
+
+
+
+
+void staff_renderButton(int program,int mColorHandle,int menu_position_handle,glMatrix *MVPMatrix,int screen,glMatrix *eye) {
+glUseProgram(program);
+    glLineWidth(1.f);
+    
+    if (packet_summary.current_frame==-1) return;
+
+    int try_forward=4;
+
+    int to_frame = packet_summary.current_frame+try_forward;
+    if (to_frame >packet_summary.end_frame) to_frame=packet_summary.end_frame;
+    
+    int from_frame=to_frame-9; 
+    if (from_frame<packet_summary.no_gap_frame) from_frame=packet_summary.no_gap_frame;
+    
+    int f;
+    int flag=0;
+    GLfloat x,y;
+    GLfloat vertices[723];
+    x=0.f;y=0.f;
+    
+    glEnableVertexAttribArray(menu_position_handle);
+    checkGlError("glEnableVertexAttribArray(men");
+    
+    
+    glVertexAttribPointer(menu_position_handle, 3, GL_FLOAT, GL_FALSE, 0, vertices);
+    checkGlError("glVertexAttribPointer");
+    
+    
+    
+    
+    
+
+
+    
+    {
+      glUseProgram(letters_opengles_program_handle());
+      checkGlError("koutds");
+    glUniformMatrix4fv(mMVPMatrixHandle, 1, GL_FALSE, (GLfloat *)(&MVPMatrix));
+    checkGlError("mvp1");
+      float scale = 0.5;
+      float x=-0.9f;
+      float y=0.15f;
+      glUniform4f(letters_opengles_color_handle(), 1.0f,1.0f,0.7f,1.0f);
+      lc->needed_points->line_width=0.128f;
+//#define WORLD_display_staff_staff "staff"
+      letters_out(lc,scale,x,y,0.f,WORLD_display_staff_staff);
+      }
+    
+}
+
+
+void staff_renderForeground(int screen,glMatrix *eye) {
+}
+
+
+
+void staff_touchEvent(int action,float x,float y) {
+if (action==1) {
+  push_display_set(2);
+  }
+}
+
+
+
+
+
+const display_set staff_display_set = {
+//#define WORLD_display_staff_staff "staff"
+  .name = WORLD_display_staff_staff,
+  .setupGraphics = staff_setupGraphics,
+  .init = NULL,
+  .finish = NULL,
+  .changeScreen = NULL,
+  .step = staff_step,
+  .renderBackground = staff_renderBackground,
+  .renderMain  = staff_renderFrame,
+  .renderForeground = staff_renderForeground,
+  .renderButton = staff_renderButton,
+  .touchEvent = default_touchEvent,
+  .keyEvent = default_keyEvent,
+  .finishStreaming = NULL
+  };
+
+
+/*
+$Log: staff.c,v $
+Revision 1.10  2019/08/25 05:07:08  hib
+Finished linux client for leleradiance. Tag is lele
+
+Revision 1.9  2019/05/03 16:28:10  hib
+wip. the impact font is goofed up again.
+
+Revision 1.8  2019/04/28 04:50:31  hib
+wip
+
+Revision 1.7  2019/04/28 04:23:42  hib
+wip
+
+Revision 1.6  2019/04/28 04:11:16  hib
+wip - changing display_set to separate init, glsetup, and screen changed
+
+Revision 1.5  2019/04/15 11:29:48  hib
+OK. NOW this is the correct version for internationalization on linux!
+
+Revision 1.4  2019/04/15 10:40:50  hib
+WORLD_ macros have now set up silent radiance to be internationalized.
+It is easier to implement a system where there are separate builds,
+but I could handle a weird multi-languge on one build with more trickiness.
+
+The world_internatiolization.h file sets it up
+Currently just english
+
+Revision 1.3  2019/04/15 06:09:25  hib
+internationalization wip
+
+Revision 1.2  2019/04/14 21:46:58  hib
+make_c_code_international basically works
+
+Revision 1.6  2019/03/17 12:58:25  hib
+Updated copyrights
+
+Revision 1.5  2019/03/14 12:47:55  hib
+wip - working on makeing the store look good
+
+Revision 1.4  2019/03/01 00:01:04  hib
+helper cleanup and initial setup of vr stuff
+
+Revision 1.3  2019/01/18 21:53:51  casanova
+started the flag
+
+Revision 1.2  2018/11/18 02:10:05  casanova
+put my name on it
+
+Revision 1.1  2018/11/17 22:29:46  casanova
+start out
+
+Revision 1.2  2018/09/29 11:31:07  hib
+Set up ivonne1 and staff
+
+Revision 1.1  2018/09/29 08:48:58  hib
+staff and ivonne1
+
+Revision 1.1  2018/09/29 08:12:42  hib
+staff made from purple_string
+
+*/
+

@@ -1,0 +1,458 @@
+$Revision: 1.1 $
+
+
+
+
+
+
+Welcome to the developer instructions for making visualizers for Silent Radiance.
+
+
+
+
+--------------------------------------------------------------------------------------------------
+Adding a new visualizer
+For this example, we will talk about the imaginary file ducks.c - that would show ducks, I presume.
+
+Step 1. Make a .h and .c file with the following functions:
+
+ducks_setupGraphics   - called upon first initialization and any resize of display change.
+ducks_step            - called upon every frame to calculate the step logic 
+ducks_renderBackground - called when ducks is the background - very rare
+ducks_renderMain       - called when rendering to the screen, or to a virtual screen to do VR or some shit.  Called often.
+ducks_renderForeground - called only when the ducks is at the top of the display set
+ducks_stepButton       - called to do calculations for the cool moving button
+ducks_renderButton     - called to render the button
+
+
+(The easy way is to copy a visualizer that is like what you are doing.)
+
+Optional:
+
+ducks_touchEvent - called to override the default_touchEvent
+ducks_keyEvent - called to override the default_keyEvent
+finishStreaming - called when the current sound is done.
+
+
+
+Step 2 - make a display_set for the ducks:
+
+const display_set ducks_display_set = {
+  .name = "ducks",
+  .setupGraphics = ducks_setupGraphics,
+  .step = ducks_step,
+  .renderBackground = ducks_renderBackground,
+  .renderMain  = ducks_renderFrame,
+  .renderForeground = ducks_renderForeground,
+  .stepButton = ducks_stepButton,
+  .renderButton = ducks_renderButton,
+  .touchEvent = default_touchEvent,   
+  .keyEvent = default_keyEvent,
+  .finishStreaming = NULL
+  };
+
+
+
+Step3 - add the following in display_set.c
+extern const display_set ducks_display_set;
+
+/* (13) */
+registered_display_sets[i++]= ducks_display_set;
+
+
+
+
+Step4 - add the following in main_menu.c
+
+add_button(i++,13);   /* ducks*/
+
+
+Step 5 - add ducks.o the the dependencies in makefile
+--------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------
+What can you do?
+Basically, all you can do is OpenGL ES 2.0 calls.  OpenGL ES 2.0 is a very close-to-metal graphics interface that can do 2d 
+or 3d work.  
+It sucks.
+Unlike the standard OpenGL code, everything has to be set up and loaded into arrays.  
+Instead of having a graphics pipeline,  a vertex shader and fragment shader is compiled at runtime for a program, and there are 
+many programs.  Initially there was one program for visualizer, but that has been reduced.
+It takes alot of work just to draw a line - an arc, things like that.
+
+But you can draw a line, a point, a set of triangles, or a complex shape with a matrix of points that make a mesh of triangles that
+make an actual shape.
+
+Why use such a sucky graphics system?
+Because it wors (almost) everywhere.
+opengles 2.0 is available on linux, windows 9nvidia), android, and ios.  
+And because it is fast to draw things.
+
+
+
+
+What the fuck is this sin cosine shit?
+
+Rotation.  Spinning around.   But sin and cosine take alot of cpu work to do - so these are precomputed in arrays alot.
+And yes, there is duplicate code in different visualizers - that do the arrays differently.
+
+
+What is helper.c
+Well, this contains a few routines used over and over again - #include helper.h can get you things like drawing a circle, or line or stuff
+
+What about letters.c?
+yeah, the letters code has a bunch of functions to do arcs, circles, thick lines, etc.  These can be used - but they have their own
+scaling stuff.
+
+What about raylib?
+
+raylib is going away.  This had a bunch of cool things, but unfortunately, it sucks.
+   It doesnt run on apple.
+   It slows down the speed of drawing.
+   It is currently used for vr - but will be gutted.
+It's too bad.  Raylib had alot of cool things going for it, but it is too obtuse.   
+
+helper.c - should expand over time to have more raylib like things.
+
+What is all this matrix shit?
+Well, I took a matrix class at 8:00 in th morning, and the teacher wouldn't look at people directly, he would gaze above them, which 
+caused all of us to doze off.  So I am not the best matrix guy.
+
+But luckily, I took a computer graphics course.  This was way before openGL and stuff so everything has to be done by hand.
+
+
+Basically, matrices allow for modifications that become scaling, translating, rotating, and setting up perspective.
+
+
+So here is 2d matrices:
+
+
+if you have x,y    * matrix   you get x' y'
+But a 2x2 matrix cant do translation.   A 3x3 can.
+In order to do that, x,y,1   * matrix =   x',y',1
+
+Here is translation
+
+
+(x,y,1)    | 1 0 dx |
+           | 0 1 dy |
+           | 0 0  1 |
+
+Or maybe its
+
+(x,y,1)    | 1  0  0 |
+           | 0  1  0 |
+           | dx dy  1 |
+
+Thats row order vs coulumn order - fuck I don't know.
+
+Well anyways the result is 
+x+dx,y+dy,1
+
+
+
+That cool. how about scaling:
+
+(x,y,1)    | sx  0   0 |
+           | 0   sy  0 |
+           | 0   0   1 |
+
+The result is 
+  x*sx,y*sy,1
+
+Rotation, lets say we want to rotate 30 degrees:
+(x,y,1)    | cos(30)  -sin(30)   0 |
+           | sin(30)  -cos(30)   0 |
+           | 0            0      1 |
+
+This rotates around 0,0 by 30 degrees - except instead of degrees, radians are used.
+PI(3.14) in radians = 180 degrees
+6.28 in radians = 360 degrees
+
+Well, there are matrix transformations in helper.c to translate,rotate,scale, all of that shit.
+
+
+
+And remember - we are 3d - to do 2d,  just assume that z is 0.
+
+Do the matrices are 4x4, instead of 3x3,  which computers like, because 4 is easier thatn 3 on the computer internals.
+
+
+
+
+So, what if you want to scale the point in a shape, rotate it, then translate it to where it is in space?
+Well the cool thing is whatever you want to do,  these functions can be combined by multiplying one matrix with another:
+
+    scalematrix * rotationmatrix * translationmatrix.
+
+
+So the matricies are normally MVP - model view perspective,  but you can andd maticies anywhere in there for special code.
+
+M - model (make the model bigger or smaller, rotate the shape, translate it somewhere).
+V - View - This is based on a eye/camera that looks from one place to another place, with a knowledge of which way is up.
+  I like to think of the view as a makeshift gun with your hand.  The thump shows up, and the arrow shows where the camera looks.
+Perspective - this makes things smaller when they are far away, and also can cause points to be off screen.
+
+
+So Model * view * perspective = the result.
+
+For most of this code, I ignore view, and have perspective do the eye and the resizing of Z.
+
+
+Well this is a bit much especially for beginners doing 2-d - so there is a special matrix just for you, in main_menu.c
+
+It is called origin_matirx.
+
+
+
+Origin matrix is as so:
+                     Y
+                     -  +1
+                     |
+                     |
+                     |
+                     |
+                     |
+                     |
+                     |
+                     |
+                     |
+
+X-|------------------0----------------------|
+  -1                 |                      1
+                     |
+                     |
+                     |
+                     |
+                     |
+                     | 
+                     |
+                     |
+                    -  -1
+w
+This is a garunteed area of which to work.  It is the square within the screen.  The screen will have right/left or up/down parts
+that go beyond 1.  But this is a good starting point.
+
+
+
+Also, there is a bunch of stuff that main_menu does, that most other parts depend on.  This includes
+width and height in pixels
+aspect ratio
+which orientation the device is pointing
+if the device is landscape or portrait mode.
+
+This function is pass_menu_setup_info.  This can speed up and make your visualizer congruent - so the screen
+works on every phone.
+
+
+   pass_menu_setup_info(
+        &width_in_pixels,
+        &height_in_pixels,
+        &width_in_inches,   -- estimated, very wrong on ios devices
+        &height_in_inches,
+        &height_to_inches, -- again estimated
+        &rotation_in_radians,  -- rotation angle in radians instead of degrees.
+        &relative_width, ratio of width over height, if width is bigger, else 1
+        &relative_height, ratio of height over width if height is bigger, else 1
+        &width_to_inches,
+        &circle_factor, -- estimate of the number of triangles needed to make a decent circle,
+        &one_color_program, -- a numerical id of an openGL ES program to draw one color per operation.
+        &full_color_program, -- a numerical id of an openGL ES program to draw color based on an array thats 1-1 with vectors.
+        &gvPositionHandle, -- a numerical id of the position variable in the OpenGLES 2.0 program
+        &projectionMatrix, -- the menu main matrix - a copy of origin_matrix
+        &mPositionHandle  -- the id number representing the matrix that is multiplied for one_color_program
+        );
+Calling pass_menu_setup_info in the setupGraphics call is a good idea. 
+
+For real basics, look at trianngle1.c
+
+
+
+
+
+
+
+
+Helper routines:
+struct display_helper - set up on processing - similar to the pass_menu_setu program
+
+
+helper_init - set up helper - if it isn't alredy set up
+hcos, hsin - fast cos and sin in radians - 4096 values.
+
+translateMatrix - add the translation to a matrix.
+multMatrix - multiply two matrices together.
+frustrumMatrix - used for 3 shit.
+rotationMatrix - rotate around a vector.
+scaleMatrix - size up and down.
+loadIdentity - a matrix that does nothing.
+gStandard2dVertexShader - txt for the vertex shader
+gStandardPurplrFragmentShader - text for the fragment shader
+
+
+GLFrawEkkipse - draw an ellipse or circle
+GLDrawString - old font code - doesnt work.
+loadShader - load a shader from a source file.
+checkGLError - note if there is an error,
+printGLString - output the gl errror
+deg2rad - convert degrees to radians
+hsv2rgb - convert hue satution and velicoty to red,green,blue
+hsl2rgb - convert hue satution and luminosity to red,green,blue
+ViewLookAt - set perspective
+rotate_apple_only - modelmatrix needs to be rotated if the display is ios
+rotate_generic - need to rotate backwards for visual_voice (sing-a-long)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+So the usual calls into ducks are:
+ducks_setupGraphics(....)
+
+for each frame (whwn enabled)
+  ducks_step()
+  for each sub-display (like vr and shit. normally just one display)
+    ducks_render()
+
+This is done in the display_set.c code.
+
+
+
+
+
+
+
+
+
+So, what do you do ?
+Look at the other files for examples - and it is still obtuse, I know. Or try helper routines.
+Play around.  break things until you get them working right.  Good luck.
+
+
+I am completely lost.
+
+start 1ith triangle1.c - a visualizer that draws one triangle.
+
+
+
+
+
+
+
+
+
+
+
+
+OK, I got something. but how do I sync with the music-
+look at ../packet_summary.h - this provides all the information of the music.
+There are 200 packets a second. Each packet should have:
+a decibel level
+a base frequency
+if there is a note onset or  beat.
+the underlying values of ech sample of music
+Complex information (like the song name, sing-a-long or other extended information)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Files:
+default.c - the default display set.
+display_set.c - run through the display sets.
+main_menu.c - list all options for display sets.
+purple_string.c - first display - based on lisagu (spelling) pattern. 
+display_main.c - display set glue for android
+display_main_linux.c - display set glue for linux
+display_main_win64.c - display set glue for windows 64
+network_cube.c - second visualizer - based on max headroom
+backward_worm.c - the favorite visdualizer
+helper.c - loose helper functions for all visualizers
+justin1.c - justin 1
+justin2.c - justin 2
+justin3.c -junstin 3
+main_menu.c - main menu to pull up the visualizers
+
+
+letters_ascii.c  - ascii only font
+letters.c - based on the school font we learned
+letters_render_opengles2.c - fast glyph rendering default font
+impact.c - the impact font - used by the new font stuff ftgles2
+
+SDL_gles2_define_overs_wrapper.c - wrappers to make SDL worl wiothout libgw
+SDL_gles2_stubcall_overs_wrapper.c - second set - see SDL in github hib
+
+top_menu.c
+
+larry_harvey_has_a_possee.c - from git.
+larry_harvey_hater_robots.c a visdualizer with hater robots
+
+tim1.c
+dewey.c
+jason.c
+triangle1.c
+visual_voice.c
+words.c - visual
+ivonne1.c - copy of backward_worm.c - for dennis
+dennis1.c - copy of purple_String.c - for dennis
+
+
+
+
+All of this is a modified raylib - which sucks. The only thing we get out of it is a half assed vr visualizer that only works 
+on linux.  Will simplify
+audio.c
+chess.c
+core.c
+core_orig.c
+lo.c
+models.c
+oculus_rift.c
+rlgl.c
+shapes.c
+textures.c
+utils.c
+text.c 
+
+example_possee_3d.c - part of larry_harvey_has_a_possee.c
+example_possee_game.c - example raylib for larry_harvey_has_a_possee - ignore
+testgles2.c - program to test out opengles 2 - used to try to get amd windows to work.
+triangle.c - example triangle program
+
+
+
+
+
+
+
+$Log: visualizer.txt,v $
+Revision 1.1  2018/09/29 11:31:07  hib
+Set up ivonne1 and dennis1
+

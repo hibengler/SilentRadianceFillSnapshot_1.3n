@@ -1,0 +1,183 @@
+Welcome new Collaborator to Silent Radiance Distance Disco
+
+
+Everything is set up for you to use the system to play a radio station, and eventually join up with 
+our store our yours!
+
+
+We can do this one of two ways - we can give you administrator rights or not.
+
+
+Here ia the instructions for someone WITH administrator rights.
+
+
+You have your own virtual server, which is used to play the radio station.
+
+It is at    rnb.killercool.net
+
+Now, this server can be moved, copied, transferred, or duplicated as your needs grow. 
+But its just a server.
+
+It runs xubuntu 18.04 - which is a good linux distribution.
+
+Think of this as the distance disco "studio".
+
+This is where you place the songs, via sftp, or using scp, ssh,  vncviewer.
+
+(Or in windows, Secure frp, pscp, putty, xming).
+
+
+
+OK - your user on rnb.killercool.net is kim
+
+Your password is xxxxxx
+
+and there is a shared graphical window using vnc, available as vnc over ssh. This has a shared password known to you and me.
+We can collaborate on this graphical window if need be.
+
+What I do on linux is the following:
+
+ssh kim@rnb.killercool.net
+	(asks for password)
+xxxxxx
+	( has a $ prompt)
+vncviewer localhost
+	(asks for a password)
+yyyyy
+
+
+
+The visual window, and all programs are run using the admin user z.  z had the programs running, and can install software or manage things.
+If you dont like visualm you can always use
+ssh z@rnb.killercool.net
+	(asks for a password)
+xxxxxx
+
+
+In the z users home area (/home/z),   there is a subdirectory called sr.
+Under sr is playlist1
+Under playlist1 is a file called user.dat, and a subdirectory called kim
+
+/home/z/sr/playlist1/kim
+ - or -
+~/sr/playlist1/kim
+
+
+many programs automatically run via two windows in the graphical interface. The yellow window is playing the songs.
+The blue window is transmitting the stream to the web server rnb.silentradiance.com.
+
+
+The yellow window program can stop at any time,  and there are ways to transmit other stuff, such as youtube, cd;s, or 
+one can do a voiceover, etc.  
+
+The songs are currently selected randomly.
+
+---------------- Troubleshooting ----------
+
+If the server disconnects or goofs up, the easiest way to fix it is just reboot this server.  It hanles all the stuff.
+
+You need the z password. currently the z password is set to 
+zzzzzz
+
+So to reboot:
+
+ssh z@rnb.killercool.net
+	(asks for password)
+zzzzzz
+	(Prompt appears)
+sudo reboot
+	(asks for password)
+zzzzzz
+
+
+
+
+
+
+
+-------------------------------------------------------------
+
+rnb.killercool.net is the back end. You can make other users to send data here, but I wouldn't share your passwords with them.
+
+This server is not backed up,    but themusic EVENTUALLY will be on other servers to do the store, demo videos, stuff like that.
+
+Currently there is no hookup to the database.  We can do that once things roll along.
+The station can, with the database, make an RIAA report -  I made ot to do this, not because I intended to stream statuatory audio,
+but to provide proff that the streaming sogs are all licensed inder direct copyright.
+
+This can be anabled, and the log files generated can track everything, so - were pretty good.
+
+But the "studio" computer is only one part of the report;  the other report comes from the web server(s).
+
+Anyways, no database right now, just files
+
+----------------------------------------------------------------
+
+
+Folder hierarchy
+   this hierarchy is important to get right in the beginning, but it can be adjusted.
+   Generally it is something like
+   kim/LabelName/LC0123_-_ARTISTS_-ALBUM_NAME /01 - artist(s) - songname.dat
+
+   when the song is playing,  a program attempts to interpret this into code and places that into a songs.dat file.
+   songs.dat is updated while the yellow programs are run, but eventually stabilizes out. It is a vertical bar delimited (|)
+   file, and can be modified by a text file, or spreadhseet and brought back.
+   
+   Also, if the database is used, changes in the database can be brought back to clean up the songs.dat file.
+   this file is used to generate the "MTV" title when people click on "Disco Info" on the application.
+   
+Once in place, it is best not to move the song, because that filename is a primary key in the database.
+
+
+
+
+
+
+
+
+
+---------------------------------
+
+OK, the other account:
+
+
+rnb.silentradiance.com is a web server I own, which hosts many websites.  The programs to receive the studio information and play it back 
+are here.  Also, a store can be set up to demo and sell the songs bring played.  Can you say "impulse buy?"
+
+The database stuff is not set up yet, but can be as we progress. So the home page just lets you hear the music from the web (experimental - 
+works only on certain browsers and fast computers - and eventually bogs down).
+
+
+You do not have web access to this account.
+
+But you have sftp, scp, and ssh access to put your own web site design up.
+
+
+Generally for the rest of silent radiance, I have a home built system, that can handle languages, different types of platforms, and does minimal tracking 
+of the user.
+
+--------------------------------------
+To get access: ssh -p 26 kim@rnb.silentradiance.com
+	(password is prompted)
+xxxxxx
+
+
+here there is a directory link w that points to the home directory for your website.
+You may change it at will, or adopt the stroe I have - because my store is also -- open source.
+
+We can partner with my database, or you can use your own at one point. I downt know.
+
+-----------------------------------------
+
+
+Too Long;didn't read
+-------------------------------------
+Read it again, and ask questions.  I can collaborate with team viewer, or using that graphical window on the server.
+
+$Revision: 1.1 $
+
+
+
+
+
+

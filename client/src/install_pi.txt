@@ -1,0 +1,30 @@
+# this is for silentradiance
+# rasberri pi instructions are experimental - turns out by following this set of rules, you wipe out their new hardware 3d driver.
+# try again later.
+
+
+
+ sudo apt-get install libjpeg-dev
+apt-get install libgles2-mesa-dev
+apt-get install libglfw3-dev
+apt-get install libasound2-dev
+apt-get install libcurl4-openssl-dev
+
+cd ~/opencvs/SilentRadiance/linux/other
+bash build_opus.sh
+cd opus
+make
+cp .libs/libopus.a ..
+sudo make install
+
+bash build_libpng.sh
+
+
+git clone https://github.com/hibengler/larry_harvey_has_a_possee.git
+cd larry_harvey_has_a_possee/src
+cp larry_harvey_has_a_possee.[ch] ~/opencvs/SilentRadiance/linux/client/src/display
+
+cd ~/opencvs/SilentRadiance/linux/client/src/
+make
+
+

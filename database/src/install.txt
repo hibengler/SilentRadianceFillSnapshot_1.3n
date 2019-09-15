@@ -1,0 +1,153 @@
+# - in my.cnf set wait_timeout to 7200 instead of 600 - for the follow on songs.dat
+# - in my.cnf set connect_timeout to 15 instead of 5 - for the follow on songs.dat
+
+cd ~/opencvs/SilentRadiance/linux/other
+
+git clone https://github.com/hibengler/bar_database.git
+cd bar_database
+cd src
+ls
+make
+sudo cp add_id clip_to_1_char combine_pipes dos2unix field fieldu fielduc find_duplicate_records flip_flop fsort \
+ give_new_id_number is_it_filled_in match randomize set_field set_id set_number_of_fields /usr/local/bin
+ 
+
+
+
+
+cd ~/opencvs/SilentRadiance/linux/other
+git clone https://github.com/spitbol/spitbol.git
+cd spitbol
+sudo apt-get install nasm
+sudo apt-get install musl-tools
+
+make clean
+make
+make install
+sudo cp ./bin/sbl /usr/bin
+
+
+
+
+sudo mkdir /var/log/sr
+sudo chown z /var/log/sr
+# well, hib for now 
+
+
+
+
+
+
+
+
+
+# Server:
+apt-get install mariadb-server
+ 
+
+
+cd ~/opencvs/SilentRadiance/linux/database/sql
+create database sr;
+use sr;
+
+@cretab_transmitter.sql
+
+....
+
+
+
+# on web server:
+cd ~/opencvs/SilentRadiance/linux/database/src
+make
+make install
+
+# on station:
+cd ~/opencvs/SilentRadiance/linux/server/src
+make
+make install
+
+
+#??? needs work
+export SR_BIN=~/src
+export MYSQL_PWD=secret
+cd ~/sr/playlist1
+ redo_all_songs_dat sr000.silentradiance.com
+ redo_all_playlist_log  sr000.silentradiance.com
+ rm playlist.log
+ touch playlist.log
+cd ~/sr/playlist2
+ redo_all_songs_dat sr000.silentradiance.com
+ redo_all_playlist_log  sr000.silentradiance.com
+ rm playlist.log
+ touch playlist.log
+ 
+cd ~/sr/playlist3
+ redo_all_songs_dat sr000.silentradiance.com
+ redo_all_playlist_log  sr000.silentradiance.com
+ rm playlist.log
+ touch playlist.log
+
+ 
+  
+   
+   
+   
+   
+   
+   
+   
+   
+   
+export SR_BIN=~/src
+export MYSQL_PWD=secret
+cd ~/sr/playlist1
+ redo_all_songs_dat pt.silentradiance.com
+ redo_all_playlist_log  pt.silentradiance.com
+ rm playlist.log
+ touch playlist.log
+cd ~/sr/playlist2
+ redo_all_songs_dat pt.silentradiance.com
+ redo_all_playlist_log  pt.silentradiance.com
+ rm playlist.log
+ touch playlist.log
+ 
+cd ~/sr/playlist3
+ redo_all_songs_dat pt.silentradiance.com
+ redo_all_playlist_log  pt.silentradiance.com
+ rm playlist.log
+ touch playlist.log
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+-------------------------------------------- stuff     
+This is for the stations, and is now done in startup_follow and play2.sh
+follow_playlist_log sr000.silentradiance.com &
+follow_songs_dat sr000.silentradiance.com & 
+bash playlist.sh
+ 
+ 
+note - needed to reconstruct the playlist for chain.killercool.com - playlist1:
+
+select c from (
+select 1 a,start_unix_time b,
+concat('sr000.silentradiance.com|sm|',start_unix_time,'|',length,'|mplayer ',filename,'||||||||||||') c
+ from sr_radio_plays where start_unix_time <1521713394.630918 
+union all select 2 a,start_unix_time b,
+concat('sr000.silentradiance.com|cm|',end_unix_time,'|',length,'|mplayer ',filename,'||||||||||||') c
+from sr_radio_plays where start_unix_time <1521713394.630918 
+) f
+order by b,a;
+

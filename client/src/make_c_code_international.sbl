@@ -1,0 +1,237 @@
+* want to collect the WORLD lines and format it for google translate to ... translate
+* and stuff
+* but basically it works!
+* usage:
+* (sbl or snobol4 should work)
+* snobol -P 10M make_c_code_international.sbl <source.c >destination.c 2>>langage_file.h -u prefix
+
+  	ws = span('	 ' char(10)) | ''
+	
+	&anchor = 1
+ 	prefix = host(0)
+	prefix '-u' ws = ''
+	prefix './' = ''
+	
+	prefix break('.') . p2 '.' arbno(any(&alphabet)) :f(noext)
+	prefix = p2
+noext
+	
+
+	
+   	comment_full =  '/*' arbno(any(&alphabet)) '*/'
+   	comment_start =  '/*' arbno(any(&alphabet)) rpos(0)
+   	comment_end = arbno(any(&alphabet)) '*/'
+	cpp_comment =  '//' arbno(any(&alphabet)) rpos(0)
+	extended_line_term = '\' ( char(10) | rpos(0) )
+	extended_line = arbno(any(&alphabet)) . the_current_subline '\' rpos(0)
+	char1 = any('abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+	char_others = span('abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+	variable_name = (char1 char_others) | char1
+	operator1 = '&&' | '||' | '|' | '&' | '%' | '->' | '<=' | '>=' '==' '!=' '++' | '?' | '~' | '^' | '~'
+	operator2 = '>'  | '<' | ','  | '{' | '=' | '[' | '+' | '-' | '*' | '/' | '(' | ')' | '}' | '.' | '!' | ']' | ':'
+	statement_end = ';'
+        octal_number = '0'  span('01234567') 
+	hex_number = '0x'  span('0123456789abcdefABCDEF')
+	float1 = span('0123456789') '.' arbno(any(0123456789))  'f'
+	float2 = span('0123456789') '.' arbno(any(0123456789)) ws ('e' | 'E') ws ( '+' | '-' | '' ) ws span('0123456789')  'f'
+	float = float1 | float2
+	double1 = span('0123456789') '.' arbno(any(0123456789)) 
+	double2 = span('0123456789') '.' arbno(any(0123456789)) ws ('e' | 'E') ws ( '+' | '-' | '' ) ws span('0123456789')
+	double = double1 | double2
+	integer = ('-' | '+' | '') span('0123456789')
+	binary_number = '0%' span('01')
+	world_international_hint = '//' ws 'WORLD_INTERNATIONAL' ws ('on' | 'off') . world_international_state
+	world_international_expansion_hint = '//' ws 'WORLD_INTERNATIONAL_EXPANSION' ws ('on' | 'off' | 'sometimes' ) . world_international_expansion_state
+
+	character_constant = "'" break("'") "'"
+	string_break = '\"'
+	all_but_string = &alphabet
+	&anchor = 0
+	all_but_string '"' = ''
+	&anchor = 1
+	
+	string_char = string_break | any(all_but_string)
+	string_constant = '"' arbno(string_char) . the_string_guts '"'
+	keyword = 'if' | 'while' | 'else' | 'break' | 'static' | 'unsigned' | 'int' | 
++		'float' | 'double' | 'char' | 'void' 
+	macros1 = ts '#' break(char(10)) 
+	macros2 = ts '#' arbno(any(&alphabet)) rpos(0)
+
+
+
+	next_term = ws ( comment_full | comment_start | cpp_comment | variable_name | extended_line_term | operator1 | operator2 | statement_end | octal_number |
++		hex_number | float | double | integer | binary_number | character_constant | string_constant | keyword | macros1 | macros2 ) . the_term ws
+
+	&anchor = 1
+	comment_mode = 0
+	full_statement = ''
+	world_international_state = 'on'
+	world_international_expansion_state = 'sometimes'
+loop1	x = input	:f(endd)
+*	terminal = 'x' x
+	ident(full_statement,'')	:f(handle_multiline)
+	
+	full_statement = x
+		:(next1)
+
+handle_multiline
+	full_statement = full_statement char(10) x
+	:(next1)
+
+next1		
+	&anchor = 0
+*	full_statement '//#define WORLD_' :s(ignore_because_earlier_define)
+* ^^^ normally not done but we had a bug
+	full_statement comment_start . thecs :s(check_comment_completed)
+	full_statement extended_line	:s(got_multiline)
+nope_it_is_closed_comment
+	&anchor = 1
+* check to see if we hinted off the parsing in a comment
+	full_statement world_international_hint
+	full_statement world_international_expansion_hint
+* if parsing is off, skip the analysis of tokens
+	ident(world_international_state,'off')	:s(done2)
+	food = full_statement
+	
+
+loop2    
+*	terminal = 'food ' food
+	ident(food,'')	:s(done2)
+	food ws rpos(0) :s(done2)
+	food next_term . full_next_term = ''	:f(notermleft)
+	the_term string_constant :s(got_one)
+	the_term comment_full	:s(skip_just_start)
+skip_just_start
+	:(loop2)
+
+
+check_comment_completed thecs '*/'	:s(nope_it_is_closed_comment)
+	&anchor = 1
+	:(loop1)
+
+got_multiline
+*	terminal = 'got multiline!!!'
+	:(loop1)
+
+done2
+	output = full_statement
+	full_statement = ''
+	:(loop1)
+	
+ignore_because_earlier_define
+	full_statement = ''
+	:(loop1)
+
+notermleft terminal = 'error cant parse ' food
+	terminal = 'from ' full_statement
+	:(done2)
+
+	
+got_one
+	&anchor = 0
+* well might be a logit that we ignore
+	full_statement 'logit('	:s(loop2)
+	full_statement 'logit ('	:s(loop2)
+	full_statement 'strtok_r('	:s(loop2)
+	full_statement 'fprintf('	:s(loop2)
+	full_statement 'TraceLog('	:s(loop2)
+	full_statement 'checkGlError('	:s(loop2)
+	full_statement 'protocol_log('	:s(loop2)
+	full_statement 'glGetUniformLocation' ws '(' :s(loop2)
+	full_statement 'glGetAttribLocation' ws '('   :s(loop2)
+	full_statement 'glBindAttribLocation' ws '('   :s(loop2)
+	full_statement 'extern' ws '"C"' 	:s(loop2)
+	play = the_string_guts
+l1	play ' ' = '_'	:s(l1)
+l2w2	play '\"' = '_dqt_' 	:s(l2w2)
+l2w	play '\n' = '_lf_' 	:s(l2w)
+l2a	play '\' = '_bksl_' 	:s(l2a)
+l2b	play '!' = '_excl_' 	:s(l2b)
+l2c	play '@' = '_at_' 	:s(l2c)
+l2d	play '#' = '_hash_' 	:s(l2d)
+l2e	play '$' = '_dlr_' 	:s(l2e)
+l2f	play '%' = '_pct_' 	:s(l2f)
+l2g	play '^' = '_carrot_' 	:s(l2g)
+l2h	play '&' = '_amp_' 	:s(l2h)
+l2i	play '*' = '_star_' 	:s(l2i)
+l2j	play '(' = '_oparen_' 	:s(l2j)
+l2k	play ')' = '_cparen_' 	:s(l2k)
+l2l	play '-' = '_minus_' 	:s(l2l)
+l2m	play '+' = '_plus_' 	:s(l2m)
+l2n	play '=' = '_equals_' 	:s(l2n)
+l2o	play ':' = '_colon_' 	:s(l2o)
+l2p	play ';' = '_semicolon_' 	:s(l2p)
+l2q	play '|' = '_vb_' 	:s(l2q)
+l2r	play '[' = '_obracket_' 	:s(l2r)
+l2s	play ']' = '_cbracket_' 	:s(l2s)
+l2t	play '{' = '_obrace_' 	:s(l2t)
+l2u	play '}' = '_cbrace_' 	:s(l2u)
+l2v	play "'" = '_qt_' 	:s(l2v)
+l2x	play '/' = '_slash_' 	:s(l2x)
+l2y	play '?' = '_qm_' 	:s(l2y)
+l2z	play '>' = '_gt_' 	:s(l2z)
+l2aa	play '<' = '_lt_' 	:s(l2aa)
+l2ab	play '.' = '_dot_' 	:s(l2ab)
+l2ac	play ',' = '_comma_' 	:s(l2ac)
+l2ad	play '`' = '_bqt_' 	:s(l2ac)
+l2ae	play '~' = '_tilde_' 	:s(l2ac)
+
+l2	play any("\!@#$%^	&*()-+=:;|[]{}'/?><.,") = '_' :s(l2)
+	&anchor = 1
+* pre expansion to prefix adjustments
+	name = 'WORLD_' play	
+	name 'WORLD_sr01' rpos(0) = 'WORLD_SR_PROTOCOL_SR01' :s(publish)
+	name 'WORLD_sr00' rpos(0) = 'WORLD_SR_PROTOCOL_SR00' :s(publish)
+	name 'WORLD_Silent_Radiance_1' arbno(any(&alphabet)) rpos(0) = 'WORLD_Silent_Radiance_With_Version_Splash_Title' :s(publish)
+	name 'WORLD_https_colon__slash__slash_sr000_dot_silentradiance_dot_com_slash_download_dot_cgi_slash_' rpos(0) =
++		'WORLD_SR000_BASE_URL' :s(publish)
+	name 'WORLD_https_colon__slash__slash_ds_dot_silentradiance_dot_com_slash_download_dot_cgi_slash_' rpos(0) =
++		'WORLD_DUBSTEP_BASE_URL' :s(publish)
+	name 'WORLD_https_colon__slash__slash_cc_dot_silentradiance_dot_com_slash_download_dot_cgi_slash_' rpos(0) =
++		'WORLD_CREATIVE_COMMONS_BASE_URL' :s(publish)
+	name 'WORLD_https_colon__slash__slash_pt_dot_silentradiance_dot_com_slash_download_dot_cgi_slash_' rpos(0) =
++		'WORLD_PSYTRANCE_BASE_URL' :s(publish)
+	name 'WORLD_https_colon__slash__slash_pt_dot_silentradiance_dot_com_slash_download_dot_cgi' rpos(0) =
++		'WORLD_PSYTRANCE_BASE_URL_NO_SLASH' :s(publish)
+	name 'WORLD_https_colon__slash__slash_reggaeton_dot_silentradiance_dot_com_slash_download_dot_cgi_slash_' rpos(0) =
++		'WORLD_REGGAETON_BASE_URL' :s(publish)
+	name 'WORLD_https_colon__slash__slash_gd_dot_silentradiance_dot_com_slash_download_dot_cgi_slash_' rpos(0) =
++		'WORLD_GRATEFUL_DEAD_BASE_URL' :s(publish)
+	name 'WORLD_https_colon__slash__slash_hm_dot_silentradiance_dot_com_slash_download_dot_cgi_slash_' rpos(0) =
++		'WORLD_HEAVY_METAL_BASE_URL' :s(publish)
+	name 'WORLD_https_colon__slash__slash_sr002_dot_silentradiance_dot_com_slash_download_dot_cgi_slash_' rpos(0) =
++		'WORLD_SR002_BASE_URL' :s(publish)
+	name 'WORLD_https_colon__slash__slash_www_dot_silentradiance_dot_com' rpos(0) =
++		'WORLD_STORE_BASE_URL' :s(publish)
+
+	
+* now - add file name if less than 8 characters
+	ident(world_international_expansion_hint,'on') :s(expand_if_prefix)
+	ident(world_international_expansion_hint,'off') :s(normal_name)
+* world_international_expansion_hint is sometimes.  Depending on the length
+	gt(size(the_string_guts),8)	:s(normal_name)
+expand_if_prefix
+	ident(prefix,"")		:s(normal_name)
+	name = 'WORLD_' prefix '_' play
+	&anchor = 0
+l3	name '.' = '_dot_'	:s(l3)
+l4	name '/' = '_'		:s(l4)
+	&anchor = 1
+	
+normal_name
+	
+* post expansion to prefix adjustments
+
+	name 'WORLD_store_en' rpos(0) = 'WORLD_LANGUAGE_CODE' :s(publish)
+	
+publish
+	terminal = '#define ' name ' "' the_string_guts '"'
+	output = '//#define ' name ' "' the_string_guts '"'
+	&anchor = 0
+l5	full_statement the_term = name	:s(l5)
+	&anchor = 1
+	:(loop2)
+		
+endd
+
+end

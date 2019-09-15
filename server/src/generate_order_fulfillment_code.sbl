@@ -1,0 +1,1490 @@
+* $Revision: 1.7 $
+*
+* called from order_fulfillment_on_verified_transaction.sh
+*    which is cxalled from order_fulfillment_all_verified_paypal.sh
+*     which is run periodically
+* convert this: mc_gross=0.69&protection_eligibility=Ineligible&payer_id=7RMPM6NN4UXVS&payment_date=20%3A01%3A08+Jun+11%2C+2019+PDT&payment_status=Completed&charset=windows-1252&first_name=Hibbard&mc_fee=0.08&notify_version=3.9&custom=&payer_status=unverified&business=sr%40killercool.net&quantity=1&verify_sign=AGYzsET5Y6MjcnIs7CfmPkIMy4i5At3lA6u4ooKebwuU-ctAfpcAKR7p&payer_email=h%40killercool.net&txn_id=2BW68940U6504332K&payment_type=instant&last_name=Engler&receiver_email=sr%40killercool.net&payment_fee=0.08&shipping_discount=0.00&receiver_id=CDKPH6G89NM78&insurance_amount=0.00&txn_type=web_accept&item_name=Song%3A+DJ+Negro+and+Vico+C+-+Me+Acuerdo+-+Mission+La+Cima+3+-+Prime+Records&discount=0.00&mc_currency=USD&item_number=92026&residence_country=US&receipt_id=5373-5610-4946-9058&shipping_method=Default&transaction_subject=&payment_gross=0.69&shipping=0.00&ipn_track_id=f75856a90bbc 
+* into the insert statements, mail statement, etc.
+
+	data_chars = &alphabet
+	&anchor = 0
+	data_chars '=' = ''
+	data_chars '&' = ''
+	&anchor = 1
+	
+	u_params = host(0)
+	u_params '-u' span(' 	') = ''
+
+	:(functions)
+done_functions
+
+	u_txn_id = st(u_params)
+*	terminal = 'u' u_params 'v' u_txn_id
+	
+	label_chars = 'abcdefghijklmnopqrstuvwxyz_'
+	a_label = span(label_chars) . the_label
+	a_name_value_pair = a_label '=' ( span(data_chars) | '' )  . the_data
+	r = table() 
+	full_comma = ''
+	full_text = ''
+	other_comma = ''
+	other_text = ''
+	is_empty = 1
+	
+loop	x = input :f(next_part)
+	is_empty = 0
+	terminal = x
+loop2
+	ident(x,'')	:s(loop)
+	x a_name_value_pair ( '&' | rpos(0) )	= ''   :f(huh)
+	f_the_data = fix_data(the_data)
+	r[the_label] = f_the_data
+
+
+	terminal = the_label ' = ' f_the_data  :(loop2)
+* used this terminal output to make file a ^ then dynamically built code:  See #dynamic
+
+* add to full text
+	full_text = full_text full_comma the_label ' = ' f_the_data
+	full_comma = char(10)
+	
+	
+* add to other text if missing fields	
+* #dynamic
+* sort <a | awk -F ' ' '{print "\t ident(the_label,'\''" $1 "'\'') :s(not_other_text)"}'
+         ident(the_label,'business') :s(not_other_text)
+         ident(the_label,'charset') :s(not_other_text)
+         ident(the_label,'custom') :s(not_other_text)
+         ident(the_label,'discount') :s(not_other_text)
+         ident(the_label,'first_name') :s(not_other_text)
+         ident(the_label,'insurance_amount') :s(not_other_text)
+         ident(the_label,'ipn_track_id') :s(not_other_text)
+         ident(the_label,'item_name') :s(not_other_text)
+         ident(the_label,'item_number') :s(not_other_text)
+         ident(the_label,'last_name') :s(not_other_text)
+         ident(the_label,'mc_currency') :s(not_other_text)
+         ident(the_label,'mc_fee') :s(not_other_text)
+         ident(the_label,'mc_gross') :s(not_other_text)
+         ident(the_label,'notify_version') :s(not_other_text)
+         ident(the_label,'payer_email') :s(not_other_text)
+         ident(the_label,'payer_id') :s(not_other_text)
+         ident(the_label,'payer_status') :s(not_other_text)
+         ident(the_label,'payment_date') :s(not_other_text)
+         ident(the_label,'payment_fee') :s(not_other_text)
+         ident(the_label,'payment_gross') :s(not_other_text)
+         ident(the_label,'payment_status') :s(not_other_text)
+         ident(the_label,'payment_type') :s(not_other_text)
+         ident(the_label,'protection_eligibility') :s(not_other_text)
+         ident(the_label,'quantity') :s(not_other_text)
+         ident(the_label,'receipt_id') :s(not_other_text)
+         ident(the_label,'receiver_email') :s(not_other_text)
+         ident(the_label,'receiver_id') :s(not_other_text)
+         ident(the_label,'residence_country') :s(not_other_text)
+         ident(the_label,'shipping') :s(not_other_text)
+         ident(the_label,'shipping_discount') :s(not_other_text)
+         ident(the_label,'shipping_method') :s(not_other_text)
+         ident(the_label,'transaction_subject') :s(not_other_text)
+         ident(the_label,'txn_id') :s(not_other_text)
+         ident(the_label,'txn_type') :s(not_other_text)
+         ident(the_label,'verify_sign') :s(not_other_text)
+
+* good to go, er bad to go, you know what I mean
+	other_text = other_text other_comma the_label ' = ' f_the_data
+	other_comma = char(10)
+
+not_other_text
+	:(loop2)	
+	
+huh	terminal = 'error: ' x
+	:(loop)
+
+
+next_part
+	eq(is_empty,1) :s(we_are_empty)
+	terminal = 'full text: ' full_text
+
+*	 sort <a | awk -F ' ' '{print "\t " $1"  =\tr['\''" $1 "'\'']"}'	
+	 business  =    st(r['business'])
+	 charset  =     st(r['charset'])
+	 unquoted_custom = r['custom']
+	 &anchor = 0
+next_partl1
+	unquoted_custom '%7C' = '|' :s(next_partl1)
+* fix embedded ? and & and =	
+custom_f_loop1
+	unquoted_custom '%3F' = '?' :s(custom_f_loop1)
+custom_f_loop2
+	unquoted_custom '%3D' = '=' :s(custom_f_loop2)
+custom_f_loop3
+	unquoted_custom '%2F' = '&' :s(custom_f_loop3)
+	
+	&anchor = 1
+	r['custom'] = unquoted_custom
+		 
+	 custom  =      st(unquoted_custom)
+	 discount  =    nt(r['discount'])
+	 first_name  =  st(r['first_name'])
+	 insurance_amount  =    nt(r['insurance_amount'])
+	 ipn_track_id  =	st(r['ipn_track_id'])
+	 item_name  =   st(r['item_name'])
+	 item_number  = nt(r['item_number'])
+	 last_name  =   st(r['last_name'])
+	 mc_currency  = st(r['mc_currency'])
+	 mc_fee  =      nt(r['mc_fee'])
+	 mc_gross  =    nt(r['mc_gross'])
+	 notify_version  =      st(r['notify_version'])
+	 unquoted_payer_email = r['payer_email']
+	 payer_email  = st(r['payer_email'])
+	 payer_id  =    st(r['payer_id'])
+	 payer_status  =	st(r['payer_status'])
+	 payment_date_text  =	st(r['payment_date'])
+	 payment_date  =	dt(r['payment_date'])
+	 payment_fee  = nt(r['payment_fee'])
+	 payment_gross  =       nt(r['payment_gross'])
+	 payment_status  =      st(r['payment_status'])
+	 payment_type  =	st(r['payment_type'])
+	 protection_eligibility  =      st(r['protection_eligibility'])
+	 quantity  =    nt(r['quantity'])
+	 receipt_id  =  st(r['receipt_id'])
+	 receiver_email  =      st(r['receiver_email'])
+	 unquoted_receiver_email  =      r['receiver_email']
+	 receiver_id  = st(r['receiver_id'])
+	 residence_country  =   st(r['residence_country'])
+	 shipping  =    nt(r['shipping'])
+	 shipping_discount  =   nt(r['shipping_discount'])
+	 shipping_method  =     st(r['shipping_method'])
+	 transaction_subject  = st(r['transaction_subject'])
+	 txn_id  =      st(r['txn_id'])
+	 unquoted_txn_id  =      r['txn_id']
+	 txn_type  =    st(r['txn_type'])
+	 verify_sign  = st(r['verify_sign'])
+
+	&anchor = 1
+	c = unquoted_custom
+	ident(c,'')  :s(default_no_custom_as_reggaeton)
+	
+	
+	station_name = ''
+	campaign_code = ''
+	web_request_type = ''
+	initial_temp_location_id = ''
+	language_code = ''
+	
+custom_eat_loop
+	terminal = 'c ' c
+	ident(c,'')	:s(custom_eat_end)
+	c ( '?' | '&' | '|' ) break('=') . the_custom_tag 
++	   '=' ( break('&|?') | ( arbno(any(&alphabet)) rpos(0) ) ) . the_custom_value = ''	:f(custom_eat_error)
+	terminal = 'tag ' the_custom_tag ' value '  the_custom_value
+	ident(the_custom_tag,'s') :s(custom_ate_station_name)
+	ident(the_custom_tag,'t') :s(custom_ate_web_request_type)
+	ident(the_custom_tag,'g') :s(custom_ate_campaign_code)
+	ident(the_custom_tag,'l') :s(custom_ate_language_code)
+	ident(the_custom_tag,'r') :s(custom_ate_initial_temp_location_id)
+* unknown custom - add it in other
+	other_text = other_text other_comma 'custom__' the_custom_tag ' = ' the_custom_value
+	other_comma = char(10)
+	:(custom_eat_loop)
+
+custom_ate_station_name
+	station_name = the_custom_value :(custom_eat_loop)
+
+custom_ate_web_request_type
+	web_request_type = the_custom_value :(custom_eat_loop)
+
+custom_ate_campaign_code
+	campaign_code = the_custom_value :(custom_eat_loop)
+
+custom_ate_language_code
+	language_code = the_custom_value :(custom_eat_loop)
+
+custom_ate_initial_temp_location_id
+	initial_temp_location_id = the_custom_value :(custom_eat_loop)
+	
+	
+
+custom_eat_error
+	terminal = 'custom_eat_error: ' c
+	other_text = other_text other_comma 'custom___other = ' c
+	other_comma = char(10)
+	:(custom_eat_end)
+	
+
+default_no_custom_as_reggaeton
+* older transactions did not fill in custom
+	terminal = 'no_custom'
+	station_name = 'reggaeton.silentradiance.com'
+	web_request_type = 'buynow'
+	campaign_code = 'yt6'
+	language_code = 'es'
+
+		
+custom_eat_end
+
+	terminal = 'station ' 
+	terminal = ''
+	terminal = 'other text: ' other_text
+* format the custom computed values and the full_text and the other_text
+	unquoted_station_name = station_name
+	station_name = st(station_name)
+	web_request_type = st(web_request_type)
+	campaign_code = st(campaign_code)
+	language_code = st(language_code)
+	initial_temp_location_id = st(initial_temp_location_id)
+	
+	full_text = st(full_text)
+	other_text = st(other_text)
+
+	txn_type "'web_accept'" 	:f(out_of_scope)
+	
+	warning_code = ''
+	warning_comma = ''
+	error_text = ''
+	error_comma = ''
+
+	sr_db = sql_connect('sr')
+	sr_dbi = sql_connect('sri')	
+
+
+	ident(station_name,'NULL') :s(get_filename_from_reggaeton)
+	terminal = 'station_name ' station_name ' item_number ' item_number
+		sic = sql_fetchrow(sr_db,"select station_name,filename,consumable_id,display_sequence,for_sale_in_general from sr_song_info_consumables"
++		     "  where consumable_id = " item_number " and station_name = " station_name " and for_sale_in_general != 0 order by display_sequence") :s(got_it)
+
+get_filename_from_reggaeton
+	terminal = 'reggaeton  item_number ' item_number
+	sic = sql_fetchrow(sr_db,"select station_name,filename,consumable_id,display_sequence,for_sale_in_general from sr_song_info_consumables"
++		     "  where consumable_id = " item_number " and station_name = 'reggaeton.silentradiance.com' "
++                   " and for_sale_in_general != 0 order by display_sequence") :s(got_it)
+
+	terminal = 'generic item_number ' item_number
+	sic = sql_fetchrow(sr_db,"select station_name,filename,consumable_id,display_sequence,for_sale_in_general from sr_song_info_consumables"
++		     "  where consumable_id = " item_number 
++                   " and for_sale_in_general != 0 order by display_sequence") :s(got_it)
+
+	error_text = error_text error_comma 'Cannot find consumable_id in song_info_consumables'
+	error_comma = char(10)
+	:(deal_with_location)
+
+
+
+got_it
+	terminal = 'rrr'
+	song_info_station_name = sic['station_name']
+	song_info_file_name = sic['filename']
+	song_info_station_name_format = st(song_info_station_name)
+	song_info_file_name_format = st(song_info_file_name)
+*	song_info_station_name,song_info_file_name
+
+
+deal_with_location
+
+	ident(initial_temp_location_id,'NULL')  :f(insert_this_order)
+	
+* well, we can fudge it from the web because we have the ip address then and the transaction id I would think
+*	fudge_temploc = sql_fetchrow(sr_dbi,"select location_id from sri_temp_locations where txn_id is null and "
+*+            " ip_address = "
+*+	    " and end_time >= now()"	
+*+	    " and errors = 0"	
+*+	    " and overlaps = 0"
+*+	    " and item_id = " item_number
+* yeah, this is a non-operation
+
+
+
+
+
+insert_this_order
+	error_text_fmt = st(error_text)
+	warning_text_fmt = st(warning_text)
+	
+	terminal = ''
+	terminal = '-----------------------------------------------'
+	terminal = 'insert this order'
+* sort <a | awk -F ' ' '{print "+\t char(10) '\''" $1 ",'\''"}'
+* sort <a | awk -F ' ' '{print "+\t char(10) " $1 " '\'',  /* " $1 " */'\'' "}'
+	sql_raw_paypal_orders = "insert into sri_raw_paypal_orders("
++        char(10) 'business,'
++        char(10) 'charset,'
++        char(10) 'custom,'
++        char(10) 'discount,'
++        char(10) 'first_name,'
++        char(10) 'insurance_amount,'
++        char(10) 'ipn_track_id,'
++        char(10) 'item_name,'
++        char(10) 'item_number,'
++        char(10) 'last_name,'
++        char(10) 'mc_currency,'
++        char(10) 'mc_fee,'
++        char(10) 'mc_gross,'
++        char(10) 'notify_version,'
++        char(10) 'payer_email,'
++        char(10) 'payer_id,'
++        char(10) 'payer_status,'
++        char(10) 'payment_date,'
++        char(10) 'payment_fee,'
++        char(10) 'payment_gross,'
++        char(10) 'payment_status,'
++        char(10) 'payment_type,'
++        char(10) 'protection_eligibility,'
++        char(10) 'quantity,'
++        char(10) 'receipt_id,'
++        char(10) 'receiver_email,'
++        char(10) 'receiver_id,'
++        char(10) 'residence_country,'
++        char(10) 'shipping,'
++        char(10) 'shipping_discount,'
++        char(10) 'shipping_method,'
++        char(10) 'transaction_subject,'
++        char(10) 'txn_id,'
++        char(10) 'txn_type,'
++        char(10) 'verify_sign,'
++
++	char(10) 'station_name,campaign_code,web_request_type,'
++	char(10) 'initial_temp_location_id,language_code,finance_code,'
++	char(10) 'other_text,full_text,warning_text,error_text'
++        ') select '
++        char(10) business ',  /* business */' 
++        char(10) charset ',  /* charset */' 
++        char(10) custom ',  /* custom */' 
++        char(10) discount ',  /* discount */' 
++        char(10) first_name ',  /* first_name */' 
++        char(10) insurance_amount ',  /* insurance_amount */' 
++        char(10) ipn_track_id ',  /* ipn_track_id */' 
++        char(10) item_name ',  /* item_name */' 
++        char(10) item_number ',  /* item_number */' 
++        char(10) last_name ',  /* last_name */' 
++        char(10) mc_currency ',  /* mc_currency */' 
++        char(10) mc_fee ',  /* mc_fee */' 
++        char(10) mc_gross ',  /* mc_gross */' 
++        char(10) notify_version ',  /* notify_version */' 
++        char(10) payer_email ',  /* payer_email */' 
++        char(10) payer_id ',  /* payer_id */' 
++        char(10) payer_status ',  /* payer_status */' 
++        char(10) payment_date ',  /* payment_date */' 
++        char(10) payment_fee ',  /* payment_fee */' 
++        char(10) payment_gross ',  /* payment_gross */' 
++        char(10) payment_status ',  /* payment_status */' 
++        char(10) payment_type ',  /* payment_type */' 
++        char(10) protection_eligibility ',  /* protection_eligibility */' 
++        char(10) quantity ',  /* quantity */' 
++        char(10) receipt_id ',  /* receipt_id */' 
++        char(10) receiver_email ',  /* receiver_email */' 
++        char(10) receiver_id ',  /* receiver_id */' 
++        char(10) residence_country ',  /* residence_country */' 
++        char(10) shipping ',  /* shipping */' 
++        char(10) shipping_discount ',  /* shipping_discount */' 
++        char(10) shipping_method ',  /* shipping_method */' 
++        char(10) transaction_subject ',  /* transaction_subject */' 
++        char(10) txn_id ',  /* txn_id */' 
++        char(10) txn_type ',  /* txn_type */' 
++        char(10) verify_sign ',  /* verify_sign */' 
++
++	char(10) song_info_station_name_format ', /* station_name */'
++	char(10) campaign_code ', /* campaign_code */'
++	char(10) web_request_type ', /* web_request_type */'
++	char(10) initial_temp_location_id ', /* initial_temp_location_id */'
++	char(10) language_code ', /* language_code */'
++	char(10) 'null  , /* finance_code */'
++	char(10) other_text ', /* other_text */'
++	char(10) full_text ', /* full_text */'
++	char(10) warning_text_fmt ', /* warning_text */'
++	char(10) error_text_fmt ' /* error_text */'
++ char(10) 'where not exists (select 1 from sri_raw_paypal_orders where txn_id= ' txn_id ');'
+
+	sql_do(sr_dbi,sql_raw_paypal_orders)   :f(bummer_orders)
+	
+	
+	ident(initial_temp_location_id,'NULL')  :s(to_the_order_items)
+	terminal = ''
+	terminal = '-----------------------------------------------'
+	terminal = 'bind the transaction to the temp page'
+
+	sql_do(sr_dbi,'update sri_temp_locations set txn_id = ' txn_id ' where location_id = ' initial_temp_location_id ';')
+	
+to_the_order_items	
+	terminal = ''
+	terminal = '-----------------------------------------------'
+	terminal = 'insert this order item'
+	sql_raw_paypal_order_items = 
++	 'insert into sri_raw_paypal_order_items(txn_id,item_sequence,item_number)'
++    char(10) 'select ' txn_id ',1,' item_number  
++    char(10) 'where not exists (select 1 from sri_raw_paypal_order_items where txn_id= ' txn_id ' and item_sequence = 1);'
+	sql_do(sr_dbi,sql_raw_paypal_order_items)   :f(bummer_order_items)
+	
+	ident(error_text,'')  :f(nogood)
+	
+
+	
+			
+	terminal = ''
+	terminal = '-----------------------------------------------'
+	terminal = 'build the index'
+	build_index() :f(no_index)
+	
+
+	terminal = ''
+	terminal = '-----------------------------------------------'
+	terminal = 'build_flac'
+		
+	display_sequence = 1
+	item_sequence = 1
+	fulfillment_type = "'flac'"
+	
+	result = build_flac(song_info_station_name,song_info_file_name) :f(noflac)
+* flac_file_name has the file name
+* currently vault.silentradiance.com/d/ <txn_id> has the data
+	vault_file_name = result['vault_file_name']
+	vault_description = vault_file_name
+	
+	vault_file_name_format = st(vault_file_name)
+	vault_description_format = st(vault_description)
+	
+	sql_raw_order_fulfillment_items = 
++	    'insert into sri_raw_order_fulfillment_items ('
++	   char(10) ' txn_id,item_sequence,display_sequence,'
++         char(10) ' item_number,fulfillment_type,'
++	char(10) 'song_info_station_name,song_info_file_name,'
++ char(10)   'album_cover_file_name,vault_file_name,'
++ char(10)   'vault_description,created_date)'
++ char(10)   'select '
++ char(10)   txn_id ', /*txn_id*/'
++ char(10)   item_sequence ', /*item_sequence*/'
++ char(10)   display_sequence ', /*display_sequence*/'
++ char(10)   item_number ', /*item_number*/'
++ char(10)   fulfillment_type ', /*fulfillment_type*/'
++ char(10)   song_info_station_name_format ', /* song_info_station_name */'
++ char(10)   song_info_file_name_format ', /* song_info_file_name */'
++ char(10)   'null , /* album cover name */'
++ char(10)   vault_file_name_format ', /* vault_file_name */'
++ char(10)   vault_description_format ', /* vault description */'
++ char(10)   'now()  /* created date */'
++ char(10)   'where not exists (select 1 from sri_raw_order_fulfillment_items where txn_id= ' txn_id 
++ char(10)   '  and item_sequence = ' item_sequence
++ char(10)   '  and display_sequence = ' display_sequence
++ char(10)   '  );'
+
+	sql_do(sr_dbi,sql_raw_order_fulfillment_items)   :f(bummer_raw_order_fulfillment_items1)
+	:(tomp3)
+
+noflac
+	error_text = error_text error_comma 'Did not make flac correctly'
+	error_comma = char(10)
+	:(tomp3)	
+	
+tomp3
+	terminal = ''
+	terminal = '-----------------------------------------------'
+	terminal = 'build_mp3'
+	display_sequence = 2
+	fulfillment_type = "'mp3'"
+	result = build_mp3(song_info_station_name,song_info_file_name)  :f(nomp3)
+	
+	vault_file_name = result['vault_file_name']
+	vault_description = vault_file_name
+	vault_file_name_format = st(vault_file_name)
+	vault_description_format = st(vault_description)
+
+	sql_raw_order_fulfillment_items = 
++	    'insert into sri_raw_order_fulfillment_items ('
++	   char(10) ' txn_id,item_sequence,display_sequence,'
++         char(10) ' item_number,fulfillment_type,'
++	char(10) 'song_info_station_name,song_info_file_name,'
++ char(10)   'album_cover_file_name,vault_file_name,'
++ char(10)   'vault_description,created_date)'
++ char(10)   'select '
++ char(10)   txn_id ', /*txn_id*/'
++ char(10)   item_sequence ', /*item_sequence*/'
++ char(10)   display_sequence ', /*display_sequence*/'
++ char(10)   item_number ', /*item_number*/'
++ char(10)   fulfillment_type ', /*fulfillment_type*/'
++ char(10)   song_info_station_name_format ', /* song_info_station_name */'
++ char(10)   song_info_file_name_format ', /* song_info_file_name */'
++ char(10)   'null , /* album cover name */'
++ char(10)   vault_file_name_format ', /* vault_file_name */'
++ char(10)   vault_description_format ', /* vault description */'
++ char(10)   'now()  /* created date */'
++ char(10)   'where not exists (select 1 from sri_raw_order_fulfillment_items where txn_id= ' txn_id 
++ char(10)   '  and item_sequence = ' item_sequence
++ char(10)   '  and display_sequence = ' display_sequence
++ char(10)   '  );'
+
+	sql_do(sr_dbi,sql_raw_order_fulfillment_items)   :f(bummer_raw_order_fulfillment_items3)
+	
+	
+	:(to_cd_cover)
+
+
+nomp3	
+	error_text = error_text error_comma 'Did not make flac correctly'
+	error_comma = char(10)
+	:(to_cd_cover)
+
+		
+to_cd_cover	
+	terminal = ''
+	terminal = '-----------------------------------------------'
+	terminal = 'build_cd_cover'
+	:(to_build_looks_good)
+* skip the cd cover for now	
+	
+	
+	result = build_cd_cover(song_info_station_name,song_info_file_name) :f(no_cd_cover)
+	display_sequence = 3
+	fulfillment_type = "'png'"
+
+	vault_file_name = result['vault_file_name']
+	vault_description = vault_file_name
+	
+	vault_file_name_format = st(vault_file_name)
+	vault_description_format = st(vault_description)
+	
+	sql_raw_order_fulfillment_items = 
++	    'insert into sri_raw_order_fulfillment_items ('
++	   char(10) ' txn_id,item_sequence,display_sequence,'
++         char(10) ' item_number,fulfillment_type,'
++	char(10) 'song_info_station_name,song_info_file_name,'
++ char(10)   'album_cover_file_name,vault_file_name,'
++ char(10)   'vault_description,created_date)'
++ char(10)   'select '
++ char(10)   txn_id ', /*txn_id*/'
++ char(10)   item_sequence ', /*item_sequence*/'
++ char(10)   display_sequence ', /*display_sequence*/'
++ char(10)   item_number ', /*item_number*/'
++ char(10)   fulfillment_type ', /*fulfillment_type*/'
++ char(10)   song_info_station_name_format ', /* song_info_station_name */'
++ char(10)   song_info_file_name_format ', /* song_info_file_name */'
++ char(10)   'null , /* album cover name */'
++ char(10)   vault_file_name_format ', /* vault_file_name */'
++ char(10)   vault_description_format ', /* vault description */'
++ char(10)   'now()  /* created date */'
++ char(10)   'where not exists (select 1 from sri_raw_order_fulfillment_items where txn_id= ' txn_id 
++ char(10)   '  and item_sequence = ' item_sequence
++ char(10)   '  and display_sequence = ' display_sequence
++ char(10)   '  );'
+	
+	sql_do(sr_dbi,sql_raw_order_fulfillment_items)   :f(bummer_raw_order_fulfillment_items3)
+	:(to_build_looks_good)	
+	
+* better handle errors
+no_cd_cover
+	error_text = error_text error_comma 'Did not make flac correctly'
+	error_comma = char(10)
+	:(to_build_we_got_an_error)
+
+
+to_build_looks_good
+	ident(error_text,'') 	:f(to_build_we_got_an_error)
+	sql =
++ "update sr_paypal_raw_transactions set build_status='FULFILL_GENERATED'"
++ char(10) " where transaction_code="
++  txn_id ";"
+	 sql_do(sr_db,sql)
+
+* now send the email
+	terminal = 'good - now make the paypal order ready'
+	
+	sql_do(sri_db,"update sri_raw_paypal_orders set finance_code='READY' where txn_id = " txn_id ';')
+
+	send_email(unquoted_txn_id,unquoted_payer_email,unquoted_receiver_email) :f(awwwww)
+	terminal = 'email worked too! All good!'
+	:(endd)
+		
+	
+awwwww	
+	terminal = 'Email ultimately failed got to abort.' txn_id
+	abend = 2
+	
+	:(endd)		    
+	
+	
+we_are_empty
+	txn_id = u_txn_id
+	ident(u_txn_id,'NULL') :s(no_param_empty)
+	terminal = 'Transaction ' txn_id ' appears empty - could be bad status'
+	sr_db = sql_connect('sr')
+
+	erec = sql_fetchrow(sr_db,'select status,last,build_status,mail_status from sr_paypal_raw_transactions where transaction_code = '
++		txn_id	 ';') :f(no_fully_empty)
+	status = erec['status']
+	build_status = erec['build_status']
+	mail_status = erec['mail_status']
+	terminal = ' this is a non op but here is the information'
+	terminal = 'txn ' txn_id ' status [' status '] build_status [' build_status ']	 mail_status [' mail_status ']'
+	terminal = ' to make it run again:'
+	terminal = 'update sr_paypal_raw_transactions set last=now(), build_status = null,mail_status=null where transaction_code = '
++	   txn_id ';'
+
+	:(endd)		    
+
+no_fully_empty	
+	terminal = 'nope transaction id is not there'
+	abend = 3
+	:(endd)		    
+
+no_param_empty
+	terminal = 'no input and no transaction parameter'
+	terminal = 'usage: order_fulfillment_on_verified_transaction.sh 5GC34799HC531131F'
+	terminal = '	which calls snobol4 -u 5GC34799HC531131F generate_order_fulfillment_code.sbl'
+	abend = 4
+	:(endd)		    
+	
+	
+to_build_we_got_an_error
+	terminal = 'hey we got an error'
+	error_text_format = st(error_text)	
+	sql = 
++ "update sr_paypal_raw_transactions set build_status='FULFILL_FAILED'"
++ char(10) " where transaction_code="
++  txn_id ";"
+	 sql_do(sr_db,sql)
+	sql = 
++ "update sri_raw_paypal_orders set error_text = " error_text_format 
++ char(10) " where transaction_code="
++  txn_id ";"
+	 sql_do(sr_dbi,sql)
+	 abend = 1
+	 :(endd)
+
+	
+
+	
+bummer_order_items
+	error_text = error_text error_comma 'cant insert order item'
+	error_comma = char(10)
+	:(to_build_we_got_an_error)
+
+bummer_orders	
+	error_text = error_text error_comma 'cant insert sri paypal order'
+	error_comma = char(10)
+	:(to_build_we_got_an_error)
+
+bummer_raw_order_fulfillment_items1
+	error_text = error_text error_comma 'cant insert flac order item fulfillment'
+	error_comma = char(10)
+	:(to_build_we_got_an_error)
+	
+bummer_raw_order_fulfillment_items2
+	error_text = error_text error_comma 'cant insert mp3 order item fulfillment'
+	error_comma = char(10)
+	:(to_build_we_got_an_error)
+
+bummer_raw_order_fulfillment_items3
+	error_text = error_text error_comma 'cant insert cd cover order item fulfillment'
+	error_comma = char(10)
+	:(to_build_we_got_an_error)
+	
+	
+nogood
+	:(to_build_we_got_an_error)
+	
+	:(endd)
+	
+no_index
+	error_text = error_text error_comma 'cant build the transaction folder anbd index'
+	error_comma = char(10)
+	:(to_build_we_got_an_error)
+
+		
+out_of_scope
+	terminal = 'out of scope'
+	sql = 
++ "update sr_paypal_raw_transactions set build_status='OUT_OF_SCOPE' where transaction_code="
++  txn_id ";"
+	sql_do(sr_dbi,sql)
+	:(endd)	
+
+
+	
+
+
+
+
+
+functions
+
+	define('fix_data(a),c,d,e,f') :(end_fix_data)
+fix_data
+	c = &anchor
+	&anchor = 0
+fdl1	a '+' = ' '  :s(fdl1)
+fdl2	a '%40' = '@' :s(fdl2)
+fdl3	a '%3A' = ':' :s(fdl3)
+fdl4	a '%2C' = ',' :s(fdl4)
+	&anchor = c
+	fix_data = a	:(return)
+end_fix_data
+
+
+	define('unescaped_file_name_from_shell_escaped(a)b,c,d,e,f') :(done_unescaped_file_name_from_shell_escaped)
+unescaped_file_name_from_shell_escaped
+	c = &anchor
+	&anchor = 1
+
+	a "'" = ""
+	a "./" = ""
+		
+	&anchor = 0
+	a "'" rpos(0) = ""
+	
+	
+uffse_l1 a "''" = "ssadasffdfsg"	:s(uffse_l1)
+uffse_l1a a "ssadasffdfsg" = "'"	:s(uffse_l1a)
+
+	&anchor = c
+	unescaped_file_name_from_shell_escaped = a
+	:(return)
+done_unescaped_file_name_from_shell_escaped
+
+
+	define('file_name_to_url(a),c,d,e,f') :(done_file_name_to_url)
+file_name_to_url
+	c = &anchor
+	&anchor = 0
+* %
+ftul1   a '%' = 'shdajkdhsjsadhjk'  :s(ftul1)	
+ftul2   a 'shdajkdhsjsadhjk' = '%37' :s(ftul2)
+
+* pluses		
+ftul3   a '+' = '%43'  :s(ftul3)	
+* spaces
+* - for teh vault anyways
+ftul4   a ' ' = '%20'  :s(ftul4)
+
+	
+
+ftul500   a char(0) = '%00'  :s(ftul500)	
+ftul501   a char(1) = '%01'  :s(ftul501)	
+ftul502   a char(2) = '%02'  :s(ftul502)	
+ftul503   a char(3) = '%03'  :s(ftul503)	
+ftul504   a char(4) = '%04'  :s(ftul504)	
+ftul505   a char(5) = '%05'  :s(ftul505)	
+ftul506   a char(6) = '%06'  :s(ftul506)	
+ftul507   a char(7) = '%07'  :s(ftul507)	
+ftul508   a char(8) = '%08'  :s(ftul508)	
+ftul509   a char(9) = '%09'  :s(ftul509)	
+ftul510   a char(10) = '%0A'  :s(ftul510)	
+ftul511   a char(11) = '%0B'  :s(ftul511)	
+ftul512   a char(12) = '%0C'  :s(ftul512)	
+ftul513   a char(13) = '%0D'  :s(ftul513)	
+ftul514   a char(14) = '%0E'  :s(ftul514)	
+ftul515   a char(15) = '%0F'  :s(ftul515)	
+ftul516   a char(16) = '%10'  :s(ftul516)	
+ftul517   a char(17) = '%11'  :s(ftul517)	
+ftul518   a char(18) = '%12'  :s(ftul518)	
+ftul519   a char(19) = '%13'  :s(ftul519)	
+ftul520   a char(20) = '%14'  :s(ftul520)	
+ftul521   a char(21) = '%15'  :s(ftul521)	
+ftul522   a char(22) = '%16'  :s(ftul522)	
+ftul523   a char(23) = '%17'  :s(ftul523)	
+ftul524   a char(24) = '%18'  :s(ftul524)	
+ftul525   a char(25) = '%19'  :s(ftul525)	
+ftul526   a char(26) = '%1A'  :s(ftul526)	
+ftul527   a char(27) = '%1B'  :s(ftul527)	
+ftul528   a char(28) = '%1C'  :s(ftul528)	
+ftul529   a char(29) = '%1D'  :s(ftul529)	
+ftul530   a char(30) = '%1E'  :s(ftul530)	
+ftul531   a char(31) = '%1F'  :s(ftul531)	
+
+* https://www.google.com/search?client=ubuntu&channel=fs&q=what+characters+are+allowed+in+url&ie=utf-8&oe=utf-8
+ftul5	  a ';' = '%3B'	:s(ftul5)
+*ftul6	  a '/' = '%2F'	:s(ftul6)
+ftul7	  a '?' = '%3F'	:s(ftul7)
+ftul8	  a ':' = '%3A'	:s(ftul8)
+ftul9	  a '@' = '%40'	:s(ftul9)
+ftul10	  a '&' = '%24'	:s(ftul10)
+ftul10b	  a '=' = '%3D'	:s(ftul10b)
+
+ftul11	  a '<' = '%3C'	:s(ftul11)
+ftul12	  a '>' = '%3E'	:s(ftul12)
+ftul13	  a '#' = '%23'	:s(ftul13)
+ftul14	  a '"' = '%22'	:s(ftul14)
+ftul15	  a '{' = '%7B'	:s(ftul15)
+ftul16	  a '}' = '%7D'	:s(ftul16)
+ftul17	  a '|' = '%7C'	:s(ftul17)
+ftul18	  a '\' = '%5C'	:s(ftul18)
+ftul19	  a '^' = '%5E'	:s(ftul19)
+ftul20	  a '~' = '%7E'	:s(ftul20)
+ftul21	  a '[' = '%5B'	:s(ftul21)
+ftul22	  a ']' = '%5D'	:s(ftul22)
+ftul23	  a '`' = '%60'	:s(ftul23)
+ftul24	  a ',' = '%2C'	:s(ftul24)
+ftul25	  a "'" = '%27'	:s(ftul24)
+
+ftul127   a char(128) = '%7F'  :s(ftul127)	
+ftul128   a char(128) = '%80'  :s(ftul128)	
+ftul129   a char(129) = '%81'   :s(ftul129)
+* etc  ???	
+	&anchor = c
+	file_name_to_url = a	:(return)
+done_file_name_to_url
+
+
+
+* db functions
+	define('st(name),a,b,c,d,e') :(end_st)
+st
+	b = name
+	ident(b,'')	:s(stnull)
+* ^^^ could do magic to identify null versus blank field
+	a = &anchor
+	&anchor = 0
+* backslash
+stl1	b "\" = 'qhqkurgkjevif' :s(stl1)
+stl2	b 'qhqkurgkjevif' = "\\" :s(stl2)
+* single quote
+stl3	b "'" = 'qhqkurgkjevif' :s(stl3)
+stl4	b 'qhqkurgkjevif' = "\'" :s(stl4)
+
+stl5	b char(0) = "\0" :s(stl5)
+stl6	b char(8) = "\b" :s(stl6)
+stl7	b char(10) = "\n" :s(stl7)
+stl8	b char(13) = "\r" :s(stl8)
+stl9	b char(9) = "\t" :s(stl9)
+stl10	b char(26) = "\Z" :s(stl10)
+
+
+* for pattern match only - need another search
+*stl11	b '%' = "qhqkurgkjevif" :s(stl11)
+*stl12	b "qhqkurgkjevif" = '\%' :s(stl12)
+*stl13	b "_" = 'qhqkurgkjevif' :s(stl13)
+*stl14	b 'qhqkurgkjevif' = "\_" :s(stl14)
+	&anchor = a
+
+	st = "'" b "'"	:(return)
+stnull	&anchor = a
+	st = 'NULL' :(return)
+
+end_st
+
+
+
+	nt_allowed = '-+.01234567890.eE'
+	define('nt(name),a,b,c,d,e') :(end_nt)
+nt	a = &anchor
+	b = name
+	ident(b,'')	:s(ntnull)
+* ^^^ could do magic to identify null versus blank field
+	c = ''
+	&anchor = 1
+ntlp	ident(b,'')	:s(ntdone)
+	b span(nt_allowed) . d = ''  :f(ntbad)
+	c = c d
+	:(ntlp)
+ntbad
+	b any(&alphabet) = '' :(ntlp)
+
+ntdone	
+	&anchor = a
+	nt = d	:(return)
+
+ntnull	&anchor = a
+	nt = 'NULL' :(return)
+
+end_nt
+
+
+
+	dt__numbers = span('0123456789') 
+	dt__hour = dt__numbers . hr
+	dt__minute = dt__numbers . mi
+	dt__second = dt__numbers . ss
+        dt__day = dt__numbers . da
+	dt__month = ( 'Jan' | 'Feb' | 'Mar' | 'Apr' | 'May' | 'Jun' | 'Jul' | 'Aug' | 'Sep' | 'Oct' | 'Nov' | 'Dec' ) . mo
+        dt__number_of_month = table()
+        dt__number_of_month['Jan'] = '01'
+        dt__number_of_month['Feb'] = '02'
+        dt__number_of_month['Mar'] = '03'
+        dt__number_of_month['Apr'] = '04'
+        dt__number_of_month['May'] = '05'
+        dt__number_of_month['Jun'] = '06'
+        dt__number_of_month['Jul'] = '07'
+        dt__number_of_month['Aug'] = '08'
+        dt__number_of_month['Sep'] = '09'
+        dt__number_of_month['Oct'] = '10'
+        dt__number_of_month['Nov'] = '11'
+        dt__number_of_month['Dec'] = '12'
+	dt__year = dt__numbers . yr
+	dt__tz = span('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ') . tz
+	dt__date_from_paypal_ipn = dt__hour ':' dt__minute ':' dt__second 
++ 		' ' dt__month ' ' dt__day ', ' dt__year ' ' dt__tz
+	
+	
+
+	define('dt(name),a,b,c,d,e,hr,mi,ss,da,mo,yr,tz') :(end_dt)
+dt	a = &anchor
+	b = name
+	ident(b,'')	:s(dtnull)
+* ^^^ could do magic to identify null versus blank field
+	&anchor = 1
+	hr = ''
+	mi = ''
+	ss = ''
+	da = ''
+	mo = ''
+	yr = ''
+	tz = ''
+	terminal = 'qqq ' b
+	b dt__date_from_paypal_ipn rpos(0)	:s(dt_got_date)
+	
+	:(freturn)
+
+	
+
+dt_got_date	
+	terminal = 'got ' hr ':' mi ':' ss ' ' mo ' ' da ', ' yr ' ' tz
+* fix year
+	d = yr + 0
+	lt(d,50) :s(dt_add_2000)
+	lt(d,100) :s(dt_add_1900)
+	:(dt_year_is_fine)
+
+dt_add_2000
+	yr = '20' yr
+	:(dt_year_is_fine)
+
+dt_add_1900
+	yr = '20' yr
+	:(dt_year_is_fine)
+
+dt_year_is_fine
+
+	&anchor = a	
+	dt = "'" yr '-' dt__number_of_month[mo] '-' da  ' ' hr ':' mi ':' ss "'" 
+	:(return)
+
+dtnull	&anchor = a
+	dt = 'NULL' :(return)
+
+end_dt
+
+
+
+
+
+
+
+* noshow - if set to something - wont show on terminal
+* ignore_fail_syntax - if set to something, system syntax errors return failure
+* ignore_fail_syntax - if set to something, failed run returns failure
+
+	define('system(stuff,noshow,ignore_fail_syntax,ignore_fail_run)a,b,c,d,e,f') :(done_system)
+system
+	ident(noshow,'') :f(system_ns1)
+	terminal = 'call: ' 
+	terminal = stuff
+system_ns1	
+	a = host(1,stuff) :f(system_bad)
+	ident(a,0) :s(system_ok)
+	ident(fail_run,'') :f(system_ok)
+	terminal = 'system call returned ' a
+	ident(noshow,'') :s(freturn)
+	terminal = 'Call: '
+	terminal = stuff
+	:(freturn)
+system_ok
+	system = a
+	:(return)	
+
+system_bad	
+	terminal = 'system was bad. oh well.'
+	ident(fail_syntax,'') :f(system_ok)
+	ident(noshow,'') :s(freturn)
+	terminal = 'Call: '
+	terminal = stuff
+	system = a
+	:(freturn)	
+done_system
+
+	
+
+	define('sql_connect(description)a,b,c,d,e,f') :(done_sql_connect)
+sql_connect
+	b = table()
+	b['description'] = description
+	sql_connect = b :(return)
+done_sql_connect
+
+
+
+
+	define('sql_fetchrow(database_handle,select_statement,bind_array_values)a,b,c,d,e,f,x,columns,row') :(done_sql_fetchrow)
+sql_fetchrow
+	a = &anchor
+	f = 'hdsfiru'
+	&anchor = 1
+	system('rm -f 2>/dev/null /tmp/' f '0',1,1,1)
+	system('rm -f 2>/dev/null /tmp/' f '1',1,1,1)
+	system('rm -f 2>/dev/null /tmp/' f '2',1,1,1)
+	output('d',22,65000,'/tmp/' f '0')
+	d = select_statement
+	endfile(22)
+	terminal = 'test select:'
+	system('cat 1>&2 /tmp/' f '0')
+
+	system('mysql -u order_fulfillment -h dtb.silentradiance.com -B sr </tmp/' f '0  >/tmp/' f '1 2>/tmp/' f '2') :f(sql_fetchrow_bad2)
+	system('cat 1>&2 /tmp/' f '2',1,1,1)
+	input('e',23,65000,'/tmp/' f '1') :f(sqlfr_noinpfile)
+	columns = table()
+	column_number = 1
+*	terminal = 'get columns:'
+	x = e	:f(sql_fetchrow_none)
+sqlfr_l1
+*	terminal = x
+	ident(x,'') :s(sqlfr_e1)
+	x  break('	') . b  ( '	' | rpos(0) ) = '' :f(sqlfr_e1)
+	columns[column_number] = b
+	column_number = column_number + 1
+	:(sqlfr_l1)
+sqlfr_e1
+	row = table()
+*	terminal = 'get row:'
+	x = e	:f(sql_fetchrow_none)
+	column_number = 1
+sqlfr_l2
+	terminal = x
+	ident(x,'')		:s(sqlfr_e2)
+	x  break('	') . b  ( '	' | rpos(0) ) = '' :f(sqlfr_e2)
+	row[columns[column_number]] = b
+	column_number = column_number + 1
+	:(sqlfr_l2)
+			
+sqlfr_e2
+	&anchor = a
+	terminal = 'fetchrow:got it'
+	sql_fetchrow = row
+	:(return)
+
+sql_fetchrow_none
+	terminal = 'fetchrow:none'
+	&anchor = a
+	endfile(23)
+	:(freturn)
+		
+sql_fetchrow_bad
+	&anchor = a
+	terminal = 'bad fetchrow system calls'
+	endfile(23)
+	:(freturn)
+	
+sql_fetchrow_bad2
+	&anchor = a
+	system('cat 1>&2 /tmp/' f '2',1,1,1)
+	terminal = 'bad fetchrow mysql calls'
+	endfile(23)
+	:(freturn)
+	
+sqlfr_noimpfile
+	&anchor = a
+	system('cat 1>&2 /tmp/' f '2',1,1,1)
+	terminal = 'no sql output file'
+	endfile(23)
+	:(freturn)
+	
+done_sql_fetchrow
+
+
+
+
+
+
+
+
+	define('sql_do(database_handle,statement,bind_array_values)a,b,c,d,e,f,x,columns,row') :(done_sql_do)
+sql_do
+	terminal = 'sqldo:' statement
+	a = &anchor
+	f = 'sfgdhkgssjk'	
+	&anchor = 1
+	
+	system('rm -f 2>/dev/null /tmp/' f '0',1,1,1)
+	system('rm -f 2>/dev/null /tmp/' f '1',1,1,1)
+	system('rm -f 2>/dev/null /tmp/' f '2',1,1,1)
+	output('d',22,65000,'/tmp/' f '0')
+	d = statement
+	endfile(22)
+
+	system('mysql -u order_fulfillment -h dtb.silentradiance.com -s sr </tmp/' f '0  >/tmp/' f '1 2>/tmp/' f '2') :f(sql_fetchrow_bad2)
+	system('cat 1>&2 /tmp/' f '2',1,1,1)
+	
+	input('e',23,65000,'/tmp/' f '1')
+	x = e	:f(sql_do_none)
+	endfile(23)
+	terminal = 'error: ' x
+	&anchor = a
+	sql_do = x
+	:(freturn)
+
+sql_do_none
+	endfile(23)
+	&anchor = a
+	sql_do = ''
+	:(return)
+done_sql_do
+
+
+
+
+
+
+
+* build functions
+	define('build_flac(song_info_station_name,song_info_file_name)a,b,c,just_file_name,the_call') :(done_build_flac)
+build_flac	
+	a = &anchor
+	&anchor = 1
+	b = '/tmp/' txn_id
+	just_file_name = song_info_file_name
+	terminal = 'just_file_name starts out as ' just_file_name
+bfl_l1	
+	just_file_name "'" break('/') '/' = "'"  :s(bfl_l1)
+	
+	terminal = 'just_file_name now is ' just_file_name
+	
+	&anchor = 0
+	just_file_name '.' ( break("'") "'" rpos(0) ) = ".flac'"
+	terminal = 'just_file_name now2 is ' just_file_name
+	&anchor = 0
+	
+* safety so we dont delete all temp files
+	ident(txn_id,'') :s(return)
+*	system('rm -rf /tmp/' txn_id)
+*	system('mkdir /tmp/' txn_id)
+*	b = '/tmp/' txn_id
+*	the_call = 'scp -P 26 -p -r '  b ' vault_receiver@vault.silentradiance.com:/var/www/vault.silentradiance.com/d'
+	system(the_call) :f(bfl_baddd)
+	
+	the_call = 'ffmpeg -y </dev/null -i /b/sr/by_station/' song_info_station_name
++                  '/' song_info_file_name ' ' b '/' just_file_name  ' >' b '/make_flac.log 2>&1'
+	terminal = the_call
+	system(the_call) :f(bfl_baddd)
+	
+	the_call = 'scp -P 26 '  b '/' just_file_name ' ' b '/make_flac.log vault_receiver@vault.silentradiance.com:/var/www/vault.silentradiance.com/d/' txn_id
+	system(the_call) :f(bfl_baddd)
+	
+	b = table()
+	b['vault_file_name'] = just_file_name
+	b['vault_description'] = just_file_name
+	build_flac = b
+	&anchor = a
+	:(return)
+
+
+bfl_baddd
+	terminal = 'error calling ' the_call
+	system('cat 1>&2 ' b 'make_flac.log')
+	&anchor = a
+	:(freturn)
+done_build_flac
+
+	
+		
+
+	define('build_mp3(song_info_station_name,song_info_file_name)a,b,c,just_file_name,the_call') :(done_build_mp3)
+* note - assumes build_flac is called first because that does stuff
+build_mp3
+	a = &anchor
+	&anchor = 1
+	just_file_name = song_info_file_name
+bmp3_l1	
+	just_file_name "'" break('/') '/' = "'"  :s(bmp3_l1)
+	
+	&anchor = 0
+	just_file_name '.' ( break("'") "'" rpos(0) ) = ".mp3'"
+	
+	b = '/tmp/' txn_id
+
+	the_call = 'ffmpeg -y </dev/null -i /b/sr/by_station/' song_info_station_name
++                  '/' song_info_file_name ' -b:a 320k ' b '/' just_file_name  ' >' b '/make_mp3.log 2>&1'
+	system(the_call) :f(bmp3_baddd)
+	
+	the_call = 'scp -P 26 '  b '/' just_file_name ' ' b '/make_mp3.log vault_receiver@vault.silentradiance.com:/var/www/vault.silentradiance.com/d/' txn_id
+	system(the_call) :f(bmp3_baddd)
+	
+	b = table()
+	b['vault_file_name'] = just_file_name
+	b['vault_description'] = just_file_name
+	build_mp3 = b
+	&anchor = a
+	:(return)
+
+
+bmp3_baddd
+	terminal = 'error calling ' the_call
+	system('cat 1>&2 ' b '/make_mp3.log',1,1,1)
+	&anchor = a
+	:(freturn)
+done_build_mp3
+
+
+	
+		
+			
+	define('build_cd_cover(song_info_station_name,song_info_file_name)a,b,c,d,e,just_file_name,the_call') :(done_build_cd_cover)
+build_cd_cover
+	a = &anchor
+	&anchor = 1
+	just_file_name = song_info_file_name
+bcdc_l1	
+	just_file_name "'" break('/') '/' = "'"  :s(bcdc_l1)
+	
+	&anchor = 0
+	just_file_name '.' ( break("'") "'" rpos(0) ) = ".png'"
+	
+	b = '/tmp/' txn_id
+
+	the_call = 'cd ' b '; wget '
+	b = table()
+	b['vault_file_name'] = ''
+	b['vault_description'] = ''
+	&anchor = a
+	build_cd_cover = b
+	:(return)
+*		system(the_call) :f(bcdc_baddd)
+	
+*	the_call = 'scp -P 26 '  b '/' just_file_name ' ' b '/make_mp3.log vault_receiver@vault.silentradiance.com:/var/www/vault.silentradiance.com/d/' txn_id
+*	system(the_call) :f(bcdc_baddd)
+	
+*	mp3_file_name = just_file_name
+* ^ global	
+
+bcdc_baddd
+	terminal = 'error calling ' the_call
+	system('cat 1>&2 ' b '/make_cdc.log',1,1,1)
+	&anchor = a
+	:(freturn)
+done_build_cd_cover
+					
+	
+	define('build_index()a,b,c,d,e') :(done_build_index)
+build_index	
+	ident(txn_id,'') :s(freturn)
+	system('rm -rf /tmp/' txn_id,1,1,1)
+	system('mkdir /tmp/' txn_id)
+	b = '/tmp/' txn_id
+	system('echo "<?php\ninclude \"../../vault.php\";\nvault_transaction_work();\n?>" >' b '/index.php')
+	the_call = 'scp -P 26 -p -r '  b ' vault_receiver@vault.silentradiance.com:/var/www/vault.silentradiance.com/d'
+	system(the_call) :f(freturn)
+	system('echo "<?php\ninclude \"../../vspecs.php\";\n?>" >' b '/vspecs.php')
+	the_call = 'scp -P 26 -p -r '  b ' vault_receiver@vault.silentradiance.com:/var/www/vault.silentradiance.com/d'
+	system(the_call) :f(freturn)
+	:(return)
+done_build_index
+
+	
+		
+	define('send_email(utxn_id,unquoted_payer_email,unquoted_receiver_email)'
++              'the_call,a,b,c,d,e,email_filename,txn_id,so,sof,count,item_sequence,display_sequence,send_email_error') :(done_send_email)
+send_email
+	a = &anchor
+	txn_id = st(utxn_id)
+	b = '/tmp/' utxn_id
+	email_filename = b '/email.txt'
+
+	terminal = email_filename ' ' utxn_id
+
+	output('emf',21,65000,email_filename) :f(sendmail_cant_write_email)
+	emf = 'From: ' unquoted_receiver_email
+	emf = 'To: ' unquoted_payer_email
+	emf = 'Bcc: ' unquoted_receiver_email
+	
+	send_email_error = 0
+	
+	
+	so = sql_fetchrow(sri_db,'select first_name,last_name,mc_currency,discount,insurance_amount,mc_fee,'
++ 	'mc_gross,payment_fee,item_name,payment_gross,quantity,shipping,shipping_discount,error_text,item_number,mc_fee rrrr'
++	' from sri_raw_paypal_orders  where txn_id = ' txn_id ';') :f(send_email_no_trans)
+	
+	terminal = "hi1"
+	
+	ident(so['error_text'],'NULL') :f(send_email_error_text)
+	item_number = so['item_number']
+	item_name = so['item_name']
+* note station_name and many other things are pulled from global
+	silentradiance_main = 'SilentRadiance.com'
+	silentradiance_main_link = '<a href="https://silentradiance.com">SilentRadiance.com</a>'
+	silentradiance_station = silentradiance_main
+	silentradiance_station_link = silentradiance_main_link
+	ident(unquoted_station_name,'') :s(send_email_skip_station_name)
+	silentradiance_station = unquoted_station_name
+	silentradiance_station_link = '<a href="https://' unquoted_station_name '">' unquoted_station_name '</a>'
+send_email_skip_station_name	
+	emf = 'Subject: Your Order '  utxn_id ' from Killer Cool East (' silentradiance_station ') is Ready' 
+	emf = 'Content-Type: text/html; charset=UTF-8'
+	emf = ''
+	emf = 'Thank you for purchasing from <a href="http://killercool.com">Killer Cool East</a> (' silentradiance_station_link ')<br>'
+	emf = '<br>'
+	emf = 'Order <a href="https://vault.silentradiance.com/d/' utxn_id '">' utxn_id '</a><br>'
+	emf = '	' so['item_number'] '	- ' so['item_name'] '		$' so['payment_gross'] ' ' so['mc_currency'] '<br>'
+	emf = '<br>'
+	
+
+	item_sequence = 0
+	display_sequence = 0
+	count = 0
+	
+			
+send_mail_loop		
+	sof = 'select * from sri_raw_order_fulfillment_items where txn_id = ' txn_id 
++       ' and ((item_sequence > ' item_sequence ') or (item_sequence = ' item_sequence ' and display_sequence > ' display_sequence ')) '
++       ' order by item_sequence,display_sequence;'
+	terminal = sof
+	count = count + 1
+	eq(count,1) :f(send_email_noheader)
+	emf = 'The following files are yours:<br><font size=5>'
+send_email_noheader	
+	sof = sql_fetchrow(sri_db,sof)	:f(send_mail_loop_done)
+	
+	ident(sof['fulfillment_type'],'flac') :s(send_mail_flac_link)
+	ident(sof['fulfillment_type'],'mp3') :s(send_mail_mp3_link)
+	:(send_mail_something_link)
+	
+send_mail_flac_link
+	fname1 = unescaped_file_name_from_shell_escaped(sof['vault_file_name'])
+	fname2 = file_name_to_url(fname1)
+	emf = '	<a href="https://vault.silentradiance.com/d/' utxn_id '/' fname2 '">CD Quality Flac: ' sof['vault_description'] '</a><br>'
+	:(send_mail_next)
+
+send_mail_mp3_link
+	fname1 = unescaped_file_name_from_shell_escaped(sof['vault_file_name'])
+	fname2 = file_name_to_url(fname1)
+	emf = '	<a href="https://vault.silentradiance.com/d/' utxn_id '/' fname2 '">320k High Quality Mp3: ' sof['vault_description'] '</a><br>'
+	:(send_mail_next)
+	
+send_mail_something_link
+	fname1 = unescaped_file_name_from_shell_escaped(sof['vault_file_name'])
+	fname2 = file_name_to_url(fname1)
+	terminal = '0 '  sof['vault_file_name']
+	terminal = '1 '  fname1
+	terminal = '2 '  fname2
+	emf = '	<a href="https://vault.silentradiance.com/d/' utxn_id '/' fname2 '">' sof['vault_description'] '</a><br>'
+	:(send_mail_next)
+	
+	
+send_mail_next
+	item_sequence = sof['item_sequence']
+	display_sequence = sof['display_sequence']
+	:(send_mail_loop)
+
+
+sendmail_cant_write_email
+	terminal = "can't open the email file " email_filename
+        send_email_error = 1
+	:(send_mail_baddebadd)
+
+
+send_mail_loop_done
+	eq(count,0)	:s(send_email_no_downloads)	
+	emf = '</font><br>'
+	emf = 'These will be available on our vault for 45 days.  Please download them before that<br>'
+	emf = " (but don't share them Piracy is a thing)<br>"
+	
+	emf = '<br><b><i>Thank you, Thank you, Thank you!</i></b><br><br>'
+	emf = 'Hibbard Engler DBA <a href="http://killercool.com">Killer Cool East</a><br>'
+	ident(silentradiance_station_link,silentradiance_main_link) :s(se_skip_link1)
+	emf = ' ' silentradiance_station_link '<br>'
+se_skip_link1	
+	emf = ' ' silentradiance_main_link '<br>'
+	emf = ' Email: sr@killercool.net<br>'
+	emf = ' Phone: 408-316-2578<br>'
+	emf = '<br>'
+	
+	endfile(21)
+	:(send_email_go)
+	
+	
+			
+	
+send_email_error_text
+	emf = 'Subject: Your Order '  utxn_id ' from <a href="http://killercool.com">Killer Cool East</a> (' silentradiance_station ') is on the way' 
+	emf = 'Content-Type: text/html; charset=UTF-8'
+	emf = ''
+	emf = 'Thank you for purchasing the order, but there is something wrong on our side.<br>'
+	emf = 'A human being has been paged to figure out the problem.<br>'
+	emf = '<br>'
+	e = 'You can check the status at <a href="https://vault.silentradiance.com/d/' utxn_id '">The Vault</a><br>'
+	emf = e
+	emf = 'Sorry for the goofup.<br>'
+	emf = 'Hibbard Engler DBA <a href="http://killercool.com">Killer Cool East</a><br>'
+	ident(silentradiance_station_link,silentradiance_main_link) :s(se_skip_link2)
+	emf = ' ' silentradiance_station_link '<br>'
+se_skip_link2
+	emf = ' ' silentradiance_main_link '<br>'
+	emf = ' Email: sr@killercool.net<br>'
+	emf = ' Phone: 408-316-2578<br>'
+	emf = '<br>'
+	emf = 'P.S. Here is the internal error:<br>'
+	e = '	' so['error_text'] '<br>'
+	emf = e
+	endfile(21)
+	send_email_error = 1
+	:s(send_email_go)
+	
+	
+
+send_email_no_trans
+	emf = 'Well, it looks like we are still placing the files in the vault.<br>'
+	emf = '<br>'
+	emf = 'A human being will double check your order, just in case.<br>'
+	emf = '<br>'
+	emf = 'You can check the status at <a href="https://vault.silentradiance.com/d/' utxn_id '">The Vault</a><br>'
+	emf = 'Sorry for the delay.<br>'
+	emf = '<br>'
+	emf = 'Hibbard Engler DBA <a href="http://killercool.com">Killer Cool East</a><br>'
+	ident(silentradiance_station_link,silentradiance_main_link) :s(se_skip_link3)
+	emf = ' ' silentradiance_station_link '<br>'
+se_skip_link3	
+	emf = ' ' silentradiance_main_link '<br>'
+	emf = ' Email: sr@killercool.net<br>'
+	emf = ' Phone: 408-316-2578<br>'
+	emf = '<br>'
+	endfile(21)
+	send_email_error = 1
+	:s(send_email_go)
+	
+	
+send_email_go
+	the_call = 'scp -P 26 ' email_filename ' vault_receiver@vault.silentradiance.com:/var/www/vault.silentradiance.com/d/' utxn_id
+	system(the_call,'',1,1)
+	the_call = 'scp -P 26 ' email_filename ' sr@mail.killercool.net:/tmp/ee' utxn_id
+	system(the_call) :f(send_email_badd1)
+	
+	
+*	the_call = 'echo "cat /tmp/ee' utxn_id ' | /usr/sbin/sendmail ' "'" unquoted_payer_email "'" ' | ssh -o BatchMode=yes -e none  -T -p 26 sr@mail.killercool.net"'
+*	the_call = 'echo "cat /tmp/ee' utxn_id ' | /usr/sbin/sendmail ' "'" unquoted_payer_email "'" ' | ssh -e none  -T -p 26 sr@mail.killercool.net"'
+*	the_call = 'echo "cat /tmp/ee' utxn_id ' | /usr/sbin/sendmail ' "'" unquoted_payer_email "'" '" | ssh -o BatchMode=yes -e none -T  -p 26 sr@mail.killercool.net"'
+*	the_call = 'echo "cat /tmp/ee' utxn_id ' | /usr/sbin/sendmail ' "'" unquoted_payer_email "'" '" | ssh -o BatchMode=yes -e none -T  -p 26 sr@mail.killercool.net'
+	the_call = 'echo "cat /tmp/ee' utxn_id ' | /usr/sbin/sendmail -t" | ssh -o BatchMode=yes -e none -T  -p 26 sr@mail.killercool.net'
+
+	system(the_call) :f(send_email_badd2)
+	
+	eq(send_email_error,1) :s(return)
+	sql_do(sr_db,"update sr_paypal_raw_transactions set mail_status='EMAIL' where transaction_code = " txn_id ';')
+	
+	send_email = ''
+	:(return)
+
+send_email_badd1
+	terminal = ' cant send this bad 1'
+	:(send_mail_baddebadd)
+
+send_email_badd2
+	terminal = ' cant send this bad 2'
+	:(send_mail_baddebadd)
+
+send_mail_baddebadd	
+	eq(send_email_error,1) :s(freturn)
+	
+	sql_do(sr_db,"update sr_paypal_raw_transactions set mail_status='BAD_EMAIL' where transaction_code = " txn_id ';')
+	:(freturn)
+
+done_send_email
+	
+	:(done_functions)
+
+
+
+
+
+endd
+end

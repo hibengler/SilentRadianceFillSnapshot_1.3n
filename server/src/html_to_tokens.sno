@@ -1,0 +1,115 @@
+	tagtext = &alphabet
+	tagtext '<' = ''
+	tagtext '>' = ''
+	
+	texty_tagtext = &alphabet
+	texty_tagtext '<' = ''
+* textytagtext can handle > in the text.
+* so if we have <a>if a>b</a> it works
+
+	inside_tagtext = &alphabet
+	inside_tagtext '>' = ''
+* textytagtext can handle > in the text.
+* so if we have <a link= ifa<b >it works
+ 	
+	endtag = '<' '' . flag_starting '/' . flag_ending  arbno(any(inside_tagtext)) . the_tagstuff '>'
+	startendtag = '<' . flag_starting arbno(any(inside_tagtext)) . the_tagstuff '/' . flag_ending '>'
+	starttag = '<' arbno(any(inside_tagtext)) . the_tagstuff '>'
+	incompletetag = '<' arbno(any(tagtext))
+	text = arbno(any(texty_tagtext))
+	sometext = span(texty_tagtext)
+	
+	some_more_text = span(tagtext)
+	
+	
+	define('process_line(line)')
+	
+	
+	stack = array('10000')
+	sp = 1;
+	filename = host(2,7)
+	INPUT('readline',1,'B100',filename)	:f(badfile)
+
+	
+* the stack is used to make sure that like hits like
+* i'll do that later
+* The idea is to convert something like
+* <table><tr><td>val</table>
+* to
+* <table><tr><td>val</td></tr></table>
+*	define('push(val)')
+*	define('pop()')
+*	define('top()')
+	
+ate_dinner
+	line = ''
+	
+loop	x = readline	:f(endd)
+	&anchor = 0
+l1	x char(13) = ''	:s(l1)
+	x char(10) = ''	:s(l1)
+	&anchor = 1
+	line = line  x :(continue1)
+	
+continue1
+	line ''	rpos(0) 	:s(loop)
+	
+	&anchor = 0
+*       if we are   <><><><>text - need to go to the next loop
+	line incompletetag . next rpos(0) :s(more)
+	line some_more_text . next rpos(0) :s(more)
+	process_line(line)
+	:(ate_dinner)
+endd
+	line ''	rpos(0) 	:s(realend)
+	process_line(line)
+	:(realend)
+	
+more
+	&anchor = 0
+	line next rpos(0) = ''	
+	&anchor = 1
+	line ''	rpos(0) 	:s(allthereis)
+	process_line(line)
+allthereis	
+	line = next
+	:(loop)
+	
+
+
+badfile	terminal = 'Error - file ' filename ' not found.'
+	:(realend)
+
+process_line	
+loop2
+	&anchor = 1
+	line sometext . thetext = '' :s(gottext)
+	line endtag = ''	 :s(got_endtag)
+	line startendtag = ''	 :s(got_startendtag)
+	line starttag = ''	 :s(got_starttag)
+	
+	line '' rpos(0)		:s(return)
+	output = 'i ' line
+	line = ''
+	:(return)
+
+gottext	
+	output = 't ' thetext
+	:(loop2)
+
+got_endtag
+	output = 'e ' the_tagstuff
+	:(loop2)	
+
+got_starttag
+	output = 's ' the_tagstuff
+	:(loop2)
+
+got_startendtag
+	output = 's ' the_tagstuff
+	output = 'e ' the_tagstuff
+	:(loop2)
+
+
+realend
+end

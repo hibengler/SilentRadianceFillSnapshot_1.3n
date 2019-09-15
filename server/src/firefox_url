@@ -1,0 +1,13 @@
+#!/bin/bash
+export URL="$1"
+export FILENAME="$2"
+# this places the output of URL in $FILENAME.html
+# this uses firefox instead of curl - so that ya know, bing things its real
+
+rm -rf 2>/dev/null ~/Downloads/$FILENAME.html
+firefox  -geometry 600x480  2>/dev/null "$URL" &
+xte "sleep 10" "keydown Control_L"  "keydown s" "keyup s" "keyup Control_L" "sleep 2" "str  $FILENAME" \
+"key Return" "sleep 2" "keydown Control_L"  "keydown w" "keyup w" "keyup Control_L" "sleep 3" "key Return"
+
+cp ~/Downloads/$FILENAME.html .
+  

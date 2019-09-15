@@ -1,0 +1,71 @@
+* this just extracts the source text.  It captures the log info for posterity
+* it expects the domain name
+
+        callsign = host(0)
+        callsign '-u ' = ''
+
+        &anchor = 0
+
+        word = span('abcdefghijklmnopqrstuvwxyz')
+
+        acode = 'sm' | 'cm' | 'fm'
+        number = span('0123456789') ( ( '.' span('0123456789') ) | '' )
+        unix_time = number
+        bar = '|'
+        seconds = number
+        command = arb
+
+        good_line = acode . the_code '|' unix_time . the_unix_time '|' seconds . the_seconds '|' command . the_command ( '|' | '' ) rpos(0)
+
+        &anchor = 1
+
+loop    x = input       :f(endd)
+        x good_line . the_good  :f(loop)
+        &anchor = 0
+ll      the_command '|' = '' :s(ll) 
+        &anchor = 1
+        output = callsign '|' the_good '|' '|' '|' '|' '|' '|' '|' '|' '|' '|' '|'
+        :(loop)
+        
+endd
+end     
+    
+    
+    
+*cm|1521663646.885745|95.000000|mplayer './hib/qisingchinese.wav'|
+*cm|1521663656.906717|95.000000|mplayer './hib/qisingchinese.wav'|
+*cm|1521663666.931799|95.000000|mplayer './hib/qisingchinese.wav'|
+*cm|1521663676.952486|95.000000|mplayer './hib/qisingchinese.wav'|
+*cm|1521663686.972372|95.000000|mplayer './hib/qisingchinese.wav'|
+*cm|1521663696.996083|95.000000|mplayer './hib/qisingchinese.wav'|
+*cm|1521663707.23416|95.000000|mplayer './hib/qisingchinese.wav'| 
+*cm|1521663717.45624|95.000000|mplayer './hib/qisingchinese.wav'| 
+*cm|1521663727.66054|95.000000|mplayer './hib/qisingchinese.wav'| 
+*fm|1521663734.574431|95.000000|mplayer './hib/qisingchinese.wav'|
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

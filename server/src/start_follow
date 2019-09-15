@@ -1,0 +1,14 @@
+#!/bin/bash
+{
+  while :; do
+    follow_playlist_log  $1 
+    sleep 5
+  done
+ } &
+{
+  while :; do
+    follow_songs_dat  $1 
+    sleep 5
+  done
+} &
+wait

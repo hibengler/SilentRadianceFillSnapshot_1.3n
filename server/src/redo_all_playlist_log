@@ -1,0 +1,17 @@
+#!/bin/bash
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export SR_LOG_DIR="${SR_LOG_DIR:-/var/log/sr}"
+
+export MIDFILE=$SR_LOG_DIR/all_playlist_`date +%y%m%d%H%M`.gz
+if [ $# -ne 1 ]; then
+  echo 2>&1 "Usage: $0 <station_name> where <station_name> is something like ds.silentradiance.com"
+  exit 2
+fi
+
+
+echo  needs station name set to $1
+sbl $SR_BIN/filter_sr_playlist_log.sbl -u $1 <playlist.log | gzip >$MIDFILE
+#gunzip <$MIDFILE | sbl $SR_BIN/convert_playlist_log_to_sql.sbl | tee b  | mysql -s -h dtb.silentradiance.com -u station_recorder sr
+gunzip <$MIDFILE | sbl $SR_BIN/convert_playlist_log_to_sql.sbl | mysql -s -h dtb.silentradiance.com -u station_recorder sr
+
+

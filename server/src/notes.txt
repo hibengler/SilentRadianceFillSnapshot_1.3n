@@ -1,0 +1,30 @@
+
+Here is how to server to the web.
+watch -n 0.1 ./music_broadcast STREAM_SR00 ok | watch -n 0.1    './upload_to_server http://soap/sirad/upload.pl'
+
+
+Beacon interval - when the beacon is sent - every 100 ms or so.
+DTIM indicates if there is multicast or broadcast.
+Thinkign reducing beacon interval from 50 ms to 20 will help
+think redice DTIM from 3 to 1 will help.
+
+
+
+
+convert to lrc
+
+get_lrc_timing 4 -r 48000 song.wav >a.lr1
+
+Where 4 is the number of beats per measure
+sbl normalize_lrc_timing.sbl <a.lr1 -u 4 4 >a.lr2
+sbl syllable.sbl <lyrics.txt >a.lr3
+
+prints out | for beat and . for onset
+
+
+program that de-spanishizes the characters and identifies the syllables - 6
+program to plan and load the lyrics instead of mplayer - 3.5
+Parsing for lyrics in player - 4
+drawing and ball for player - 8
+
+

@@ -1,0 +1,99 @@
+
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export STATION_NAME=$1
+
+
+
+# $Revision: 1.3 $
+# note - call build_albums_from_songs first as a maintenance job
+# then call scrape_all
+# need to use journals, etc.
+# this is messy, meeds own directory MYSQK_OWD, directories and synlinks set up as sio
+
+echo "
+insert into sr_consumables(consumable_type,consumable_name,isrc_code,ean,
+bn,business,item_name,item_number,amount,currency_code,shipping,shipping2,
+demo_video_url,image_url,imagehead_url,undefined_quantity,receiver_email,
+mrb,pal,no_shipping,no_note,title,artist,label,catalogue,format,barcode,
+the_release,action_id,affiliation_code) select 
+ consumable_type,concat(concat('s:',filename),concat(':',station_name))
+ consumable_name,
+ null isrc_code,ean,
+bn,business,item_name,null,amount,currency_code,
+shipping,shipping2,demo_video_url,image_url,imagehead_url,
+undefined_quantity,receiver_email,mrb,pal,no_shipping,no_note,
+title,artist,label,catalogue,format,barcode,the_release,action_id,
+affiliation_code from sr_songs_to_consumables_v  v
+where  station_name='$STATION_NAME' 
+and mode='i'
+and the_error='' 
+and not exists (select 1 from sr_consumables sc2 
+where sc2.consumable_name = concat(concat('s:',v.filename),concat(':',v.station_name))  );
+
+
+
+insert into sr_song_info_consumables(station_name,filename,consumable_id,
+for_sale_in_general) 
+select station_name,filename,sc.consumable_id,1 
+from sr_songs_to_consumables_v s2c,sr_consumables sc 
+where  s2c.station_name='$STATION_NAME' 
+and s2c.mode='i'
+and s2c.the_error=''
+and sc.consumable_name = concat(concat('s:',s2c.filename),concat(':',s2c.station_name));
+
+create or replace temporary table temp_cname (consumable_id bigint, new_name varchar(400))
+select min(consumable_id) consumable_id,item_name,count(*) ct from sr_consumables c
+where consumable_name like 's:%'
+and not exists (select 1 from sr_consumables c2 where c2.consumable_name = c.item_name)
+group by item_name
+having count(*)=1
+;
+
+update sr_consumables c
+inner join temp_cname t
+on c.consumable_id = t.consumable_id
+set c.consumable_name = t.new_name,
+item_number = c.consumable_id;
+
+drop  temporary table temp_cname;
+
+update sr_consumables c
+set consumable_name=concat(concat(item_name,':',consumable_id)),
+item_number = c.consumable_id
+where c.consumable_name like 's:%'
+;
+
+     
+update sr_songs_to_consumables_v s2c 
+inner join sr_consumables c 
+  on s2c.consumable_id = c.consumable_id
+  and s2c.station_name='$STATION_NAME'
+  and s2c.mode='u'
+  and s2c.the_error=''
+  set  
+  c.isrc_code=(select isc.isrc_code 
+     from sr_international_standard_recording_codes isc
+     where isc.isrc_code = s2c.isrc_code),
+  c.business=s2c.business,
+  c.amount = s2c.amount,
+  c.currency_code = s2c.currency_code,
+  c.shipping = s2c.shipping,
+  c.shipping2 = s2c.shipping2,
+  c.demo_video_url = s2c.demo_video_url,c.image_url = s2c.image_url,
+  c.imagehead_url = s2c.imagehead_url,
+  c.undefined_quantity = s2c.undefined_quantity,
+  c.receiver_email = s2c.receiver_email,
+  c.mrb=s2c.mrb,
+  c.pal=s2c.pal,
+  c.no_shipping=s2c.no_shipping,
+  c.no_note=s2c.no_note,
+  c.title=s2c.title,
+  c.artist=s2c.artist,
+  c.label=s2c.label,
+  c.catalogue=s2c.catalogue,
+  c.format=s2c.format,
+  c.barcode=s2c.barcode,
+  c.the_release=s2c.the_release,
+  c.affiliation_code=s2c.affiliation_code;
+" | tee /tmp/l |   mysql -u automatic_maintenance -h dtb.silentradiance.com -s sr 
+

@@ -1,0 +1,479 @@
+*
+* $Revision: 1.3 $
+*
+* this one is like json - except that it looks at 10 sifferent samples
+* each sample is 1/100th of a second offset, causing an average of the 
+* word location to essentially be acurate to 1/100th of a second!
+* note - last time it was blank space - so I am going to add some oh sound right at the beginning
+* and disregard. - that will keep clipping algorithmg from making it different.
+* and they are different.
+* Also, we rate the "confidence" of the translation - sorta like bogo-mips.
+* and choose the best one to co through.
+* and from the best one, we pick the better aggregate times.
+*
+*  table[by start time]
+*   points to a 
+*       table[lower(word)]
+*         points to a 
+*            table - with number of samples and average start time and end time
+*         points to some 
+*              tables with a sample
+*
+* searching is by looking at current time, forward 10 milliseconds back 10 milliseconds, 20,-20,30,-30,40,-40,50,-50 
+*    where the rough word matches
+
+* - americanize takes the utf8 out and also has lower case removal, and punctuation removal
+-include "americanize.sbl"	
+* handle_utf8 - gets rid of the latin characters - but we still got them, and might show them some day
+
+
+
+	:(functions)
+done_functions
+
+	sz = span(' 	') | ''
+	
+	pat = array('10')
+	pat[1] = '|'
+	pat[2] = ' '
+	pat[3] = ' '
+	pat[4] = ' '
+	pat[5] = ' '
+	pat[6] = '.'
+	pat[7] = ' '
+	pat[8] = ' '
+	pat[9] = ' '
+	pat[10] = '.'
+	
+	complex_distance = array(11)
+	complex_distance[1] = 0
+	complex_distance[2] = -10
+	complex_distance[3] = 10
+	complex_distance[4] = -20
+	complex_distance[5] = 20
+	complex_distance[6] = -30
+	complex_distance[7] = 30
+	complex_distance[8] = -40
+	complex_distance[9] = 40
+	complex_distance[10] = -50
+	complex_distance[11] = 50
+	
+
+	find_starttime = sz '"startTime":' sz '"' break('s') . the_starttime
+	find_endtime = sz '"endTime":' sz '"' break('s') . the_endtime
+	find_word = sz '"word":' sz '"' break('"') . the_word
+	find_confidence = sz '"confidence":' sz break(',') . the_confidence ','
+	
+	
+	
+* - pass1 - collect info on each word	
+initialize_pass_1
+	number_file_names = 9
+	files = table()
+	
+
+* - by start time - aggrogate
+* then by name	
+	by_start_time = table(1000,1000)
+	file_number = 0
+* by_start_time is a lookup to build things
+* by_actual_times is a table with the average
+* these are indexed by hundredth of a second integers, then by name	
+	
+bigloop
+	gt(file_number,number_file_names)	:s(bigdone)
+	
+* reset confidence aggrigation	
+	files[file_number] = table()
+	confidences = table()
+	confidences['n'] = 0
+	files[file_number]['confidences'] = confidences
+	confidence = table()
+	confidence['word_count'] = 0
+	confidence['confidence'] = -1
+* ^^^ throwaway
+		
+	
+	
+	input('infile',4,'t' file_number '.json')
+	by_actual_times = table(1000,1000)
+	
+	
+	
+loop_reset
+	the_starttime = ''
+	the_endtime = ''
+	the_word = ''
+	the_confidence = ''
+	
+loop	x = infile	:f(done)
+	x find_confidence	:s(new_confidence)
+	x find_starttime	:s(loop)
+	x find_endtime		:s(loop)
+	x find_word	:s(gotone)
+	:(loop)
+
+
+* confidences are analyzed later on for picking the best run
+new_confidence
+	enum = confidences['n']
+	confidences['n'] = confidences['n'] + 1
+	confidence = table()
+	confidences[enum] = confidence
+	confidence['word_count'] = 0
+	confidence['confidence'] = the_confidence
+	:(loop)
+	
+
+
+
+
+* got a word see if we can find it in a nearby timeframe
+gotone	
+	confidence['word_count'] = confidence['word_count'] + 1
+	the_starttime = fix_time(the_starttime)
+	the_endtime = fix_time(the_endtime)
+	the_raw_word = the_word
+	the_word = handle_utf8(the_word)
+	the_uword = lower(the_word)
+	the_uword = no_punctuation(the_uword)
+	
+	
+	distance = 1
+search_loop
+	gt(distance,11)	:s(no_find)
+	entityn = by_start_time[the_starttime - complex_distance[distance]]
+	ident(entityn,'')	:f(found_it1)
+search_again
+	distance = distance + 1
+	:(search_loop)
+
+		
+found_it1
+	entry = entityn[the_uword]
+	ident(entry,'')	    :f(found_it)
+	:(search_again)
+	
+		
+no_find			
+	entry = table()
+	entry['number_values'] = 1
+	entry['original_starttime'] = the_starttime
+	enum = 0
+	entry[enum] = table()
+	entry[enum]['starttime'] = the_starttime - file_number
+	entry[enum]['endtime'] = the_endtime - file_number
+* the - file_number offsets for the filler part of the alternate files
+	entry[enum]['raw_word'] = the_raw_word
+	entry[enum]['word'] = the_word
+	entry[enum]['uword'] = the_uword
+	entityn =  by_start_time[the_starttime]
+	ident(entityn,'')	:f(found_it_build)
+	entityn = table()
+	by_start_time[the_starttime] = entityn
+found_it_build	
+	entityn[the_uword] = entry
+	:(compute_average)
+		
+						
+found_it
+	enum = entry['number_values']
+	entry['word'] = the_word
+	entry['uword'] = the_uword
+	entry['raw_word'] = the_raw_word
+	entry['number_values'] = entry['number_values'] + 1
+	entry[enum] = table()
+* the - file_number offsets for the filler part of the alternate files
+	entry[enum]['starttime'] = the_starttime - file_number
+	entry[enum]['endtime'] = the_endtime - file_number
+	
+
+* we could do it later, but it is spitbol - everythg easy and right now				
+compute_average	
+	i = 0
+	sum_starttime = 0
+	sum_endtime = 0
+ca_loop
+	lt(i,entry['number_values'])   :f(ca_done)
+	sum_starttime = sum_starttime + entry[i]['starttime']
+	sum_endtime = sum_endtime + entry[i]['endtime']
+	i = i + 1
+	:(ca_loop)
+ca_done
+	entry['starttime'] = sum_starttime / entry['number_values']
+	entry['endtime'] = sum_endtime / entry['number_values']
+	
+*	terminal = the_starttime ' ' the_word ' ' file_number  ' ' entry['starttime']  'f ' entry['number_values']
+	
+	entityna = by_actual_times[entry['starttime']]
+	ident(entityna,'')	:f(got_by_actual)
+	entityna = table()
+	by_actual_times[entry['starttime']] = entityna
+got_by_actual
+	entityna[the_uword] = entry
+	
+	
+	:(loop_reset)
+	
+* find the entry if you can
+		
+	
+done
+	endfile(4)
+	file_number = file_number + 1
+	:(bigloop)
+
+bigdone 
+
+
+
+
+* OK - now we are going to choose a file to use
+* for each file - figure out the overall confidence
+* and then pick the highest one
+pick_file_to_use	
+	file_number = 0
+	choosen_file_number = 0
+	choosen_score = 0
+pf_loop
+	gt(file_number,number_file_names)	:s(pf_done)
+	confidences = files[file_number]['confidences']
+	
+	i = 0
+	total_word_count = 0
+	total_score = 0
+pf_loop2
+	ge(i,confidences['n'])		:s(pf_done2)
+	confidence = confidences[i]
+	the_word_count = confidence['word_count']
+	the_confidence = confidence['confidence']
+	&anchor = 0
+	the_confidence '0.' = ''
+	the_confidence len(5) . the_confidence
+	&anchor = 1
+	
+	the_confidence = convert(the_confidence,'integer')
+	confidence['score'] =  the_confidence  * the_word_count
+	total_word_count = total_word_count +  the_word_count
+	total_score = total_score + confidence['score']
+	i = i + 1
+	:(pf_loop2)
+
+pf_done2
+	eq(total_word_count,0)	:f(pf_normal)
+	total_word_count = 1
+pf_normal
+	score = total_score / total_word_count
+	confidences['score'] = score
+	gt(choosen_score,score)   :s(pf_not_good_enough)
+	choosen_file_number = file_number
+	choosen_score = score
+pf_not_good_enough
+	terminal = 'f ' file_number 's ' score
+	file_number = file_number + 1
+	:(pf_loop)
+
+* here choosen_score is the high score
+* here choosen_file_number is the file number
+pf_done	
+	
+
+
+
+
+* Ok - reopen the file - and produce the output
+initialize_pass2
+	file_number = choosen_file_number	
+	
+	input('infile',4,'t' file_number '.json')
+	
+* c - column count for column line
+* t - column count for t line
+	c = 0
+	t = 0
+	topstring = ''
+	currentstring = ''
+
+	output = '#'
+	
+pass2_loop_reset
+	the_starttime = ''
+	the_endtime = ''
+	the_word = ''
+
+pass2_loop
+	x = infile		:f(pass2_done)
+	x find_starttime	:s(pass2_loop)
+	x find_endtime		:s(pass2_loop)
+	x find_word		:s(pass2_gotone)
+	:(pass2_loop)
+	
+
+pass2_gotone
+	the_starttime = fix_time(the_starttime)
+	the_endtime = fix_time(the_endtime)
+	the_raw_word = the_word
+	the_word = handle_utf8(the_word)
+	the_uword = lower(the_word)
+	the_uword = no_punctuation(the_uword)
+	
+	
+	distance = 1
+p2_search_loop
+	gt(distance,11)	:s(p2_no_find)
+	entityn = by_start_time[the_starttime - complex_distance[distance]]
+	ident(entityn,'')	:f(p2_found_it1)
+p2_search_again
+	distance = distance + 1
+	:(p2_search_loop)
+
+
+p2_found_it1
+	entry = entityn[the_uword]
+	ident(entry,'')	    :f(p2_found_it)
+	:(p2_search_again)
+	
+		
+p2_no_find		
+* should never happen	
+	terminal = 'Error cannot find ' the_uword ' for time ' the_starttime
+	:(pass2_loop_reset)
+
+
+p2_found_it
+	the_starttime = entry['starttime']
+	the_endtime = entry['endtime']
+	output = '# ' the_starttime '|' the_word '|' the_endtime '|' the_raw_word
+	
+l2	gt(c,t) 	:f(d2)
+	t = t + 1
+	d = remdr(t,10)
+	topstring = topstring pat[d + 1]	:(l2)
+d2	
+
+l3	lt(t,the_starttime)	:f(d3)
+	c = c + 1
+	t = t + 1
+	currentstring = currentstring ' '
+	
+	d = remdr(t,10)
+	topstring = topstring pat[d + 1]
+	
+	ge(size(currentstring),110)  :f(l3)
+	&anchor = 0
+	topstring any(&alphabet) rpos(0) = '.'
+	&anchor = 1
+	
+	output = topstring
+	currentstring = trim(currentstring)
+	ident(currentstring,'')          :s(nocurrent)
+	output = currentstring
+nocurrent
+	topstring = ''
+	currentstring = ''
+	:(l3)
+
+
+d3	
+	currentstring = currentstring the_word
+	c = c + size(the_word)
+
+	
+l4	gt(c,t) 	:f(d4)
+	t = t + 1
+	d = remdr(t,10)
+	topstring = topstring pat[d + 1]	:(l4)
+d4	
+		
+				
+	:(pass2_loop_reset)
+	
+pass2_done
+
+
+
+
+	output = topstring
+	currentstring = trim(currentstring)
+	ident(currentstring,'')          :s(nocurrent2)
+	output = currentstring
+nocurrent2
+	output = '# done'
+	:(endd)
+
+
+
+
+	
+functions
+
+	define('fix_time(thetime)a,b,c') :(done_fix_time)
+	
+fix_time
+	a = &anchor
+	&anchor = 0
+	thetime '.' = ''   :f(ft_nodot)
+	thetime = convert(thetime,'int') 
+	thetime '0' rpos(0) = ''
+	:(ft_fixed)
+	
+ft_nodot	thetime = thetime * 100
+	
+ft_fixed	
+	&anchor = a
+	thetime = thetime + 0
+	fix_time = thetime	:(return)
+
+done_fix_time
+
+
+
+
+
+
+	define('no_punctuation(word)a,b,c') :(done_no_punctuation)
+	
+no_punctuation
+	a = &anchor
+	&anchor = 0
+npunc1
+	word notany('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') = ''   :s(npunc1)
+
+	&anchor = a
+	no_punctuation = word	:(return)
+done_no_punctuation
+
+
+
+ 
+*   lower
+*   make a string lower case
+        define('lower(s)')
+        up_lo  =  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+        lo_up  =  'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
+                                                :(uplo_end)
+lower    lower   =  replace(s, up_lo, lo_up)      :(return)
+uplo_end
+        
+        
+* upper
+* make a string upper case
+        define('upper(s)')
+        xup_lo  =  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+        xlo_up  =  'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                                                :(xuplo_end)
+upper   upper   =  replace(s, xup_lo, xlo_up)      :(return)
+xuplo_end
+        
+
+
+
+	:(done_functions)
+
+
+
+
+
+endd
+
+end

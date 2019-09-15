@@ -1,0 +1,302 @@
+* Silent Radiance wifi broadcast for digital silent disco.
+* $Revision: 1.2 $
+* Copyright (C) 2018 Hibbard M. Engler And Dennis Domine and Ivonne Laguer
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License   
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+* 
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+* 
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+	&anchor = 1
+
+	:(functions)
+functions_done
+
+	start_consonent = 'th' | 'Th' | 't'  | 'T'  | 'q'  | 'Q' | 'bj' | 'Bj' | 'Bl' | 'bl' |
++			'br' | 'Br' | 'by' | 'By' | 'b'  | 'B' |
++			'ch' | 'Ch' | 'Cl' | 'cl' | 'cr' | 'Cr' | 'ct' | 'Ct' | 'c' | 'C' |
++			'dl' | 'Dl' | 'dr' | 'Dr' | 'dy' | 'Dy' | 'd'  | 'D' | 
++			'fj' | 'Fj' | 'fr' | 'Fr' | 'fl' | 'Fl' | 'fr' | 'Fr' | 'f' | 'F' |
++			'gh' | 'Gh' | 'gl' | 'Gl' | 'gr' | 'Gr' | 'g'  | 'G' |
++			'h'  | 'H'  |
++			'j'  | 'J' |
++			 'kn' | 'Kn' | 'kr'  | 'Kr' | 'k' | 'K' |
++			'l'  | 'L' | 'll' | 'Ll' |
++			'mc' | 'Mc' | 'mn' | 'Mn' |  'mr' | 'Mr' | 'm' | 'M' |
++			'n' | 'N' |
++			'ph' | 'Ph' | 'pl' | 'Pl' | 'pr' | 'Pr' | 'pt' | 'Pt' | 'ps' | 'Ps' | 'p' | 'P' |
++			'rh' | 'Rh' | 'r'  | 'R'  | 
++			'sc' | 'Sc' | 'shl' | 'schl' | 'sh' | 'Sh' | 'Sk' | 'Sk' | 'sl' | 'Sl' | 'st' | 'St' | 'sw' | 'Sw' | 's' | 'S' |
++			'v'  | 'V'  |
++			'wh' | 'Wh' | 'wr'  | 'Wr' | 'w' | 'W'  |
++			'x'  | 'X'  |
++			'y'  | 'Y'  |
++			'z'  | 'Z'  
+
+
+
+	start_vowel_group = 'ui' | 'ue' | 'ie' | 'ei' | 'ai' | 'oi' | 'oa' | 'oo' | 'a' | 'e' | 'i' | 'o' | 'u'
++		    | 'UI' | 'UE' | 'IE' | 'EI' | 'AI' | 'OI' | 'OA' | 'OO' | 'A' | 'E' | 'I' | 'O' | 'U'
+	vowel_group = start_vowel_group | 'y' | 'Y' | 'oy' 
+
+* cat
+* c is the begin consonent
+* a is the vowel group
+* t is the end consonant
+
+* brought
+* br is the begin consonant
+* ou is the vowel group
+* ght is the end consonent(s)
+
+*manager
+*m is the begining consonant
+*a is the vowel group
+*n is the end consonant
+*  ^^^^- syllable1    
+*a is the vowel group
+*g is the end consonent
+*  ^^^^^- syllable2
+*e is the vowel group
+*r is the end consonent
+* ^^^^^^- syllable2
+
+* knight
+* kn is the start consonant
+* i is the vowel group
+* ght is the end consonant
+
+*pedro
+* p is the begining consonant 
+* e is the vowel group 
+* d is the begining consonant
+* r is the start consonant
+* ^^^^ syllable3
+* o is the vowel group
+
+	end_consonent = 'be' | 'bes' | 'bs' | 'b' |
++			'ce' | 'ces' | 'cs' | 'ck' | 'c' |
++			'de' | 'des' | 'ds' | 'd' |
++			'fe' | 'fes' | 'fs' | 'ft' | 'f' |
++			'ge' | 'ges' | 'gs' | 'ghts' | 'ghtes' | 'ght' | 'gh' | 'g' |
++			'he' | 'hes' | 'hs' | 'h' |
++			'je' | 'jes' | 'js' | 'j' |
++			'ke' | 'kes' | 'ks' | 'k' |
++			'les' | 'le' | 'ls' | 'lt' | 'll' | 'l' |
++                       'mes' | 'me' | 'ms' | 'm' |
++			'nes' | 'ne' | 'nd' | 'ns' | 'ngs' | 'nges' | 'ng' | 'n' |
++                       'pes' | 'pe' | 'ps' | 'p' |
++			'res' | 'rt' | 'rs' | 're' | 'r' |
++			'ses' | 'st' | 'ss' | 's' |
++			'tes' | 'ts' | 'th' | 't' |
++                       'ves' | 'vs' | 'v' |
++			'wn'  | 'wes' | 'ws' | 'we' | 'w' |
++			'xes' | 'xs' | 'xe' | 'x' |
++			'zes' | 'zs' | 'ze' | 'z'
+
+	syllable1 = start_consonent vowel_group end_consonent
+	syllable2 = start_vowel_group end_consonent
+	syllable3 = start_consonent vowel_group 
+	syllable4 = start_vowel_group 
+	syllable_exception = 'ffsdfdsfds'
+	syllable = syllable1 | syllable2 | syllable3 | syllable4 | syllable_exception
+
+	word5 = syllable . the_syl1 syllable . the_syl2 syllable . the_syl3 syllable . the_syl4 syllable . the_syl5
+	word4 = syllable . the_syl1 syllable . the_syl2 syllable . the_syl3 syllable . the_syl4 '' . the_syl5
+	word3 = syllable . the_syl1 syllable . the_syl2 syllable . the_syl3 '' . the_syl4 '' . the_syl5
+	word2 = syllable . the_syl1 syllable . the_syl2 '' . the_syl3 '' . the_syl4 '' . the_syl5
+	word1 = syllable . the_syl1 '' . the_syl2 '' . the_syl3 '' . the_syl4 '' . the_syl5
+	word_e1 = ( 'y' | 'Y' | 'C' ) . the_syl1 '' . the_syl2 '' . the_syl3 '' . the_syl4 '' . the_syl5 
+	word_e2 = ( "C'" ) . the_syl1 ( 'mon' | 'Mon' ) . the_syl2 '' . the_syl3 '' . the_syl4 '' . the_syl5 
+	word_e3 = 'supercalafragalisticexpialidocious' | 'spfra'
+	
+	
+	word_exception = word_e1 | word_e2 | word_e3
+	
+
+	word = word1 | word2 | word3 | word4 | word5 | word_exception
+
+	end_of_word = span('!().,@#$%^&* 	') | rpos(0)
+
+* gets a line
+loop	line = input	:f(done)
+	line = handle_utf8(line)
+        outline = ''
+	comma = ''
+
+* gets a word
+loop2	ident(line,'')	:s(done2)
+	line word . the_word end_of_word . the_space = ''		:f(badword_in_line)
+	the_word word_e3 rpos(0)	:s(exception_e3)
+
+* place the syllables in outline
+	outline = outline comma the_syl1
+	comma = ' '
+	ident(the_syl2,'')	:s(finish2)
+	outline = outline comma '_' the_syl2
+	ident(the_syl3,'')	:s(finish2)
+	outline = outline comma '_' the_syl3
+	ident(the_syl4,'')	:s(finish2)
+	outline = outline comma '_' the_syl4
+	ident(the_syl5,'')	:s(finish2)
+	outline = outline comma '_' the_syl5
+	:(finish2)
+	
+exception_e3
+	outline = 'su _per _ca _la _fra _ga _lis _tic _ex _pi _a _ li _ do _ci _ous'
+	:(finish2)
+* supercalafragalisticexpialidocious	_
+	
+	
+	
+	
+
+finish2
+	outline = outline the_space
+	:(loop2)
+
+done2
+	output = outline
+	:(loop)
+
+
+badword_in_line
+	terminal = '		bad word: ' line
+
+continue0
+	line	syllable1 . t	:s(found_syllable1)
+	line	syllable2 . t	:s(found_syllable2)
+	line	syllable3 . t	:s(found_syllable3)
+	line	syllable4 . t	:s(found_syllable4)
+
+continue1
+	line break(' 	') . the_evs end_of_word . the_space = ''	:s(whatevs)
+	line = ''		
+	:(loop2)
+
+whatevs
+	outline = outline the_evs the_space	:(loop2)
+
+
+found_start_constanent
+	terminal = 'found start constanent: ' t
+	:(continue0)
+
+
+found_syllable1
+	terminal = 'found syllable 1: ' t
+	:(continue1)
+
+found_syllable2
+	terminal = 'found syllable 2: ' t
+	:(continue1)
+found_syllable3
+	terminal = 'found syllable 3: ' t
+	:(continue1)
+found_syllable4
+	terminal = 'found syllable 4: ' t
+	:(continue1)
+
+
+
+functions
+
+	non128 = &alphabet
+	&anchor = 0
+	i = 0
+fl1	non128 char(i) = ''
+	i = i + 1
+	gt(i,127) :f(fl1)
+	&anchor = 1
+	
+
+	
+	define('ord(x)a,b,c)')	:(end_ord)
+ord
+	a = &anchor
+	&anchor = 0
+	b = &alphabet
+	c = ''
+	x any(&alphabet) . c
+	b c arbno(any(&alphabet)) rpos(0) = ''
+	&anchor = a
+	ord = size(b)
+	:(return)
+end_ord					
+	
+	
+	define('handle_utf8(x)a,b,c,d,e,f')	:(end_handle_utf8)
+handle_utf8
+	a = &anchor
+	
+	
+h8l
+	&anchor = 0
+h8l1	x char(195) char(161) = 'a'  :s(h8l1)
+h8l2	x char(195) char(179) = 'o'  :s(h8l2)
+h8l3	x char(195) char(169) = 'e'  :s(h8l3)
+h8l4	x char(195) char(173) = 'i'  :s(h8l4)
+h8l5	x char(195) char(186) = 'u'  :s(h8l4)
+h8l6	x char(195) char(177) = 'n'  :s(h8l5)
+	
+	
+	
+	
+	
+	&anchor = 1
+	x arbno(any(&alphabet)) . b span(non128) . c = ''	:f(h8ok)
+	
+	
+	d = ''
+	e = ''
+	f = ''	
+	c any(non128) . d = ''
+	c any(non128) . e = ''
+	c any(non128) . f = ''
+	c = d e f
+	terminal = 'unknown code: ('  c ') '
+	terminal = 'unknown code: (' d ' ' e ' ' f ') '
+	terminal = 'hey ' ord(d)
+	terminal = ord(e)
+	terminal = ord(f)
+	terminal = 'look it up '
+	:(done)
+	
+	
+	
+	
+h8ok
+	handle_utf8 = x
+	&anchor = a
+	:(return)
+end_handle_utf8		
+	
+
+	:(functions_done)
+
+
+
+
+
+
+
+
+
+done
+end
+
+
+
+* $Log: syllable.sbl,v $
+* Revision 1.2  2018/08/29 14:07:12  ivonne
+* I added an exception to handle supercalafragil-whatever.
+*

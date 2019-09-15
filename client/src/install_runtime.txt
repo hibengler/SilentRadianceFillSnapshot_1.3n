@@ -1,0 +1,11 @@
+how to install runtime: note needs milkdrop and all that
+xubuntu 18.04
+
+
+apt-get install libgles2-mesa libglfw3  libcurl4
+
+
+
+cd projectm
+# looks like I need libprojectM
+# So I copied the files

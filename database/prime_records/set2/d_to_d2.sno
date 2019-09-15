@@ -1,0 +1,56 @@
+
+	anotvb = &alphabet
+	anotslash = &alphabet
+	&anchor = 0
+	anotvb '|' = ''
+	anotslash '|' = ''
+	&anchor = 1
+	
+	field = arbno(any(anotvb)) 
+	field_break = ( '|' ) | rpos(0)
+	
+	valid = field . old_name field_break 
++		field . cd_name field_break
++		field . genre field_break
++		field . main_dir_part field_break
++		field . authors field_break
++		field . producers field_break
++		field . new_dir_name field_break
++		field . quoted_new_dir_name field_break
++		arbno(any(&alphabet)) . rest rpos(0)
+	&anchor = 1
+
+loop	x = input	:f(endd)
+	ident(x,'') :s(loop)
+	old_name = ''
+	cd_name = ''
+	genre = ''
+	main_dir = ''
+	authors = ''
+	producers = ''
+	new_dir_name = ''
+	rest = ''
+	x valid	:f(error_x)
+	ident(new_dir_name,'') :s(make_new_dir_name)
+doit
+	output = old_name '|' cd_name '|' genre '|' main_dir_part '|' authors '|' producers '|' new_dir_name '|' quoted_new_dir_name '|' rest
+	:(loop)
+
+make_new_dir_name
+	ident(cd_name,'')	:s(new_dir_name_is_in_other)
+	new_dir_name = genre '/' cd_name '-' main_dir_part
+	quoted_new_dir_name = "'" new_dir_name "'"
+	:(doit)
+	
+new_dir_name_is_in_other
+	new_dir_name = 'other/' old_name 
+	quoted_new_dir_name = "'" new_dir_name "'"
+	:(doit)
+	
+
+error_x
+	terminal = 'invalid x: ' x
+	:(loop)
+
+endd
+end

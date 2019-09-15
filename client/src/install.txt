@@ -1,0 +1,162 @@
+
+# this is for silentradiance
+# rasberri pi instructions are in install_pi.txt 
+# try again later.
+
+
+sudo su -
+sudo apt-get install libglfw3-dev libgles2-mesa libgles2-mesa-dev  libglfw3-dev  libglfw3-dev   libglfw3 \
+  libsdl2-2.0 libsdl2-dev 
+sudo apt-get install automake cmake autotools-dev 
+
+sudo apt-get remove libgles2-mesa libgles2-mesa-dev libglfw3-dev libglfw3
+
+sudo apt-get install libcurl4-openssl-dev libjpeg-dev libsdl1.2-dev \
+ cmake yasm autoconf automake libtool libsdl2-dev libglm-dev \
+  qt5-default qtdeclarative5-dev libqt5opengl5-dev libjack-dev \
+  libpulse-dev libsdl-dev \
+ libgles2-mesa-dev libglfw3-dev libglfw3  
+  
+  
+#### for 16.04:vvv
+sudo apt-get install freetype2-demos libfreetype2-devel \
+ mesa-utils-extra libegl1-mesa libegl1-mesa-drivers libegl1-mesa-dev
+ 
+#    for 18.04
+sudo apt-get install freetype2-demos libfreetype6-dev  \
+ mesa-utils-extra libegl1-mesa libegl1-mesa-dev
+
+
+
+
+# as per https://askubuntu.com/questions/244133/how-do-i-get-egl-and-opengles-libraries-for-ubuntu-running-on-virtualbox
+
+
+# raylib prereqs
+sudo apt-get install build-essential git \
+ libasound2-dev mesa-common-dev libx11-dev libxrandr-dev libxi-dev xorg-dev libgl1-mesa-dev \
+ libglu1-mesa-dev
+
+
+#exit from root
+exit
+
+cd ~/opencvs/SilentRadiance/linux/other
+bash build_opus.sh
+bash build_libpng.sh
+
+
+
+
+
+#glfw for raylib:
+cd ~/opencvs/SilentRadiance/linux/other
+
+ git clone https://github.com/glfw/glfw.git
+cd glfw
+cmake -DBUILD_SHARED_LIBS=ON
+
+make -j 8
+sudo make install
+
+
+
+cd ~/opencvs/SilentRadiance/linux/other
+git clone https://github.com/raysan5/raylib.git
+cd raylib/src
+make clean
+make
+sudo make install
+
+cd ../examples
+
+# If xubuntu x86_c4:
+
+make  PLATFORM=PLATFORM_DESKTOP  GRAPHICS=GRAPHICS_API_OPENGLES_20 \
+    CFLAGS="-fPIC -I/usr/include/GL"  RAYLIB_LIBTYPE=SHARED \
+  LDFLAGS='-L/usr/local/lib/raylib -lGLESv2  -lglfw'
+
+	
+		
+
+
+#-----------------------------------
+#freetype 
+#font impact from https://www.wfonts.com/font/impact
+
+
+cd ~/opencvs/SilentRadiance/linux/other
+
+wget https://download.savannah.gnu.org/releases/freetype/freetype-2.9.1.tar.bz2
+tar -xjvf freetype-2.9.1.tar.bz2
+cd freetype-2.9.1
+
+./configure --enable-static --with-zlib=no --with-bzip2=no \
+  --with-harfbuzz=no --with-old-mac-fonts=no --with-fsspec=no \
+   --with-quickdraw-toolbox=no --with-ats=no --with-png=no
+make
+sudo make install
+cd /usr/local/lib
+cp libfreetype.a ~/opencvs/SilentRadiance/linux/other
+cp libfreetype.a ~/opencvs/SilentRadiance/linux/client/src/display
+
+
+#ftgles2
+
+cd ~/opencvs/SilentRadiance/linux/other
+#sudo apt-get install freeglut3-dev
+
+#git clone https://github.com/sloopdoom/ftgles-gles2.git
+git clone https://github.com/hibengler/ftgles2.git
+cd ftgles2
+cd ftgles2
+export CFLAGS="-DFTGLES2=1 -I/usr/include -I/usr/local/include -I/usr/local/include/freetype2"
+export CPPFLAGS="-DFTGLES2=1 -I/usr/include  -I/usr/local/include -I/usr/local/include/freetype2"
+./configure --enable-static   -with-ft-prefix=/usr/local
+
+
+make
+# test to compile - but no show 
+#gcc -g -I/usr/include/freetype2 -o t1 t1.c /usr/local/lib/libftgles2.a \
+#  -lGL -lGLESv2 -lEGL -lm -lstdc++ -lfreetype
+sudo make install
+cd /usr/local/lib
+cp libftgles2.a ~/opencvs/SilentRadiance/linux/other
+cp libftgles2.a ~/opencvs/SilentRadiance/linux/client/src/display
+
+#gcc -DFTGLES2=1 -g -I/usr/include -DHAVE_GL_GLUT_H \
+# -I/usr/include/freetype2 -o CTest CTest.c  /usr/local/lib/libftgles2.a   \
+# -lGLESv2 -lEGL -lm -lstdc++ -lfreetype -lglut
+
+
+
+cd ~/opencvs/SilentRadiance/linux/other
+git clone https://github.com/hibengler/projectm.git
+# or
+#git clone https://github.com/projectM-visualizer/projectm.git
+
+
+
+
+
+cd projectm
+# looks like I need libprojectM
+./autogen.sh
+
+./configure --enable-gles  --enable-sdl --enable-qt
+make -j 4
+sudo make install
+
+cd ~/opencvs/SilentRadiance/linux/client/src/
+make
+
+./silentradiance
+
+make clean
+make reggaeton69
+
+make clean
+make resplandor
+
+make clean
+make leleradiance

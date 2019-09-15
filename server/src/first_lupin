@@ -1,0 +1,4 @@
+{ while true; do echo word4 Ha;echo word4 Pi;echo word8 B
+echo word4 Da; echo word4 Al; echo word4 li 
+echo -e word8 \\003;echo -e word8 U; 
+echo word8   ; done } | perl silas

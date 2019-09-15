@@ -1,0 +1,13 @@
+#!/bin/bash
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export APACHE_LOG_DIR="${APACHE_LOG_DIR:-/var/log/apache2}"
+export SR_LOG_DIR="${SR_LOG_DIR:-/var/log/sr}"
+cd $APACHE_LOG_DIR
+
+export MIDFILE=$SR_LOG_DIR/all_`date +%y%m%d`.gz
+
+
+get_all_sr_error_log | gzip >$MIDFILE
+
+gunzip <$MIDFILE | sbl $SR_BIN/convert_sr_error_log_into_sql.sbl | 
+ fieldu 1 | mysql -s -h dtb.silentradiance.com -u station_multicaster sr

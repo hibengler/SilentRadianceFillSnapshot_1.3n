@@ -1,0 +1,87 @@
+*The songs.dat files are inconsistent.  So I am going to clean by first
+* so this is converted into a function for convert_playlist_to_sbl.sql - so we can deal
+* counting the fields
+* usage:
+* sbl /usr/local/bin/count_fields.sno <songs.dat
+* field program from bar_database might help.
+* note - the determination of these fields depends on mp3 tagging, other file format tags, the directory structure and file structure
+* of the files - especially for dr spooks, greatful dead, and heavy metal.
+* chain (u channel, sr000, reggaeton) has 20 fields n (means terminated with | where
+*
+*	1	filename		filename in latin char set with single quotes usually - ueful for shell creation
+*	2	filename		filename without quotes - useful for fopen
+*	3	time			duration in seconds of the song. floating point
+*	4	ean			some code for selling - guess us a made up code. GD has gdyy-mm-ddd?t? or s>t>
+*	5	Featured Artist		Might be the band or artist.
+*	6	sound_recording_title	Sound recording title
+*	7	isrc			Another identifiecation code
+*	8	album_title		Album title
+*	9	marketing_label		music label 0 Or "The Live Tapes" for greatful dead.
+*	10	track			track number, sometimes starts with 01, sometimes 1. Greatful dead tracks are more complicated.
+*	11	title			Title to print out like mtv title - \n is \\n. Iverrides the standard
+*					formula that is duplicated in index.php and some c code somewhere.
+*	12	year			year of the recording or publishing or something.
+*	13	genre			Genre if defined
+*	14	extra1			for expansiont
+*	15	extra2			for expansiont
+*	16	picture			for picture something
+*	17	picture ipc		ipc code for picture
+*	18	picture_width			for expansiont
+*	19	picture_height			for expansiont
+*	20	sha256			computed sha code of the file
+*
+* but some have 21 fields!!! such as playlist2 also on  chain (u channel, sr000, reggaeton) has 20 fields n (means terminated with 
+* and this is duplicated in sr_song_info - with the station name added - so we can fix things in the db - and reload songs.dat for the runtime operations
+* ??? something else added at the end
+* 21 - sha256
+*
+* 20 fields look auto done - 1|20|n, GD does 1|21|n - and there 
+* and some fields in playlist2 are 19|n - which causes snobol to fuck up when loading into the database (oh no)
+* and some fields are 21|y - should be fixable.
+* songs.dat also goofy in playlist3- of coarse!
+* psytrance is fucked up (drugs.killercool.com, pt.silentradiance.com, etc.
+*
+* 15n, 16n, 18n, 19n - most are 16n 
+*
+*
+* OK - ball is only 15n
+* looks like we need to make the database parser much smarter to clean up this stuff
+* I will ASSUME 20 is the right size
+
+	&anchor = 1
+	line_number = 0
+
+loop	x = input	:f(endd)
+	line_number = line_number + 1
+	field_count = 0
+loop1
+	ident(x,'')	:s(done1)
+	x break('|') . last_field '|' = ''	:s(matched_field)
+	x '|' '' . last_field = '' :s(matched_field_empty)
+	x arbno(any(&alphabet)) . last_field rpos(0)	:s(matched_field_no_close)
+	:(matched_error)
+
+matched_field
+	ident(last_field,'')	:s(matched_field_empty)
+	empty_field = 'n'
+next1	field_count = field_count + 1
+	:(loop1)		
+
+matched_field_empty
+	empty_field = 'y'
+	:(next1)
+	
+matched_field_no_close
+	ident(last_field,'')	:s(done1)
+	empty_field = 'nc'
+	:(done1)
+	
+
+
+
+done1
+	output = line_number '|'	field_count '|' empty_field '|' last_field
+	:(loop)
+
+endd
+end

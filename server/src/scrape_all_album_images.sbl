@@ -1,0 +1,1693 @@
+
+* $Revision: 1.15 $
+* this thing looks at geomagnetic (and used to liik at two other sites) in order to sell stuff
+*
+* please put in its own foplder.
+* this function takes in codes to search for, One per CD. then it tries:
+* geomagnet ic news all lower
+* geomagnetic newsa all upper
+* geomagnet dubstEP
+* beatport
+* until it is all collected
+* then once it got a filer - in g.out, it might open a second file to get the cover cd.
+* this now does the job of scrape_image1_geomagnetic
+* and the other scrapers.
+* we want to get all the info we can.  Although spook promised the pictures, no deliver yet,.
+* and the artist info is important for the second stage - shout outs!
+
+* so mainloop is going through input that way.
+* main patterns reading from input
+	
+	tab = char(9)
+	da_pattern = break(tab) . the_station_name tab
++		  break(tab) . the_cd_short_name tab
++		  break(tab) . the_folder tab
++		  break(tab) . the_unescaped_folder tab
+
+	&anchor = 0
+	no_slash = &alphabet
+	no_slash '/' = ''
+
+	allnull = 'NULL' rpos(0)
+	&anchor = 1
+	
+	
+	
+* here are the patterns for parsing html
+
+	&anchor = 0
+	not_amp = &alphabet
+	not_amp '&' = ''
+	
+	not_slash = &alphabet
+	not_slash '/' = ''
+	
+	all_but_dash = &alphabet
+	all_but_dash '-' = ''
+	&anchor = 1
+	
+	
+	
+
+	sz = ( span(' 	') | '' )
+
+
+
+* s input - input hiddens - probably parameters for a paypal form
+	input_pattern  = 's input ' arbno(any(&alphabet)) 'name' sz '=' sz '"' break('"') 	. xx_name 
++	 '"'  arbno(any(&alphabet))
++           'value' sz '=' sz '"'  break('"') . xx_value 
+
+* image_head is on geomagnetic news - it is 512x1024 and has pretty copy about the CD
+	image_head_pattern = 's img src="' break('"') . image_head_url '"' arbno(any(&alphabet)) 'height="1024"'
+* <img src="/news/Geocd078/geocd078.jpg" width="500" height="1024" border="0" /></a></p>
+
+*	imagemain_pattern - should collect a main cd image.  geomagnetic is the best because high res.
+	two_something = '250' | '256'
+	imagemain_pattern1 = 's ' ( 'IMG' | 'img' ) sz 'height="' two_something '"'
++	sz 'src="' break('"') . image_url '"' sz 'width="87' two_something '"'
+
+	imagemain_pattern1b = 's ' ( 'IMG' | 'img' ) sz 
++		'src="' break('"') . image_url '"' sz 'width="' two_something '"'
++                           sz 'height="' two_something '"'
+
+
+	imagemain_pattern2 = 's meta property="og:image" content="'  break('"') . image_url '"'
+	imagemain_pattern3 = 's meta name="og:image" content="'  break('"') . image_url '"'
+
+	imagemain_pattern = ( imagemain_pattern1 | imagemain_pattern1b 
++		| imagemain_pattern2 | imagemain_pattern3 )
+
+* a or area is looking in the first html (g.html,g.tok) for an <a href> or <area href> that points to a second page with the second
+* page having the CD.   So we can look a second page in.
+* for geomagnetic, this is normally news -> labels/... area
+* for searching other areas, it could be different.
+	a_or_area = 'a' | 'area'
+	url_pattern1 = 's ' a_or_area ' ' arbno(any(&alphabet)) 'href="' ( 'http://www.psyshop.com/' break('"') ) . the_url
+	url_pattern2 = 's ' a_or_area ' ' arbno(any(&alphabet)) 'href="' ( '../../labels/' break('"') ) . the_url
+	url_pattern3 = 's ' a_or_area ' ' arbno(any(&alphabet)) 'href="' ( 'http://geomagnetic.tv/labels/' break('"') ) . the_url
+	url_pattern4 = 's ' a_or_area ' ' arbno(any(&alphabet)) 'href="' ( '/labels/' break('"') ) . the_url
+	url_pattern = url_pattern1 | url_pattern2 | url_pattern3 | url_pattern4
+	
+
+* t tracks collaboration has info of multiple artists on tracks.		
+	collab_tracks_start_pattern = 't Tracks Collaboration:'
+*t Tracks Collaboration &ndash; Rmx INFO&hellip;
+
+
+* general stuff leading to a email address	
+	numbers = span('0123456789')
+	
+	letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	alphanum = '1234567890-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	alphanumdot = '1234567890-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.'
+	email_address_pattern = any(letters) arbno(any(alphanum)) '@' span(alphanumdot) . the_email_address
+	
+	
+* more stuff to read multiline track info with an email address fo rht artist.
+	collab_tracks_name_pattern = 't' sz 'Track # ' numbers . the_track_number sz arbno(any(&alphabet)) . the_artist
+	collab_tracks_email_pattern = 't' sz email_address_pattern
+
+
+* More info - scraping for information that is about the same as the paypal info.
+* ignore Price "In Stock:" and "Arrived"	
+	more_info_names1 = 'Title' | 'Artist' | 'Label' | 'Format' | 'Barcode' | 'Release' | 'Catalogue'
+* alternates:
+	more_info_names2 = 'Release Title' | 'Media Format' | 'Catalogue No.'
+	more_info_names = more_info_names1 | more_info_names2
+	more_info_pattern = 't' sz more_info_names . the_more_info_name
++	 ':' span(&alphabet) . the_more_info_value rpos(0)
+
+* some more info is inside a table as <td>Artist:</td><td>value</td>
+*	
+	more_info_table_pattern = 't' sz more_info_names . the_more_info_name ':' sz rpos(0)
+
+
+	track_keywords = 'TRACK' sz 'LIST' | 'Track Listing:'
+	track_list_pattern = 't' sz track_keywords
+* track_list_pattern is for the text based tack list used sometimes.
+* other times, it is in a table structure.
+
+
+* t 01 - artist - song_title
+* t 04 - Artist2 - song_title
+	track_line_pattern = 't' sz ( numbers . the_track_number sz '-' sz span(all_but_dash) . the_artist
++  	 sz '-' 
++		sz arbno(any(&alphabet)) . the_song_title ) . the_raw_title rpos(0)
+
+
+* t 01 . song_title   - no artist
+* t 05. song_title		
+	track_line_pattern_simple1 =  't' sz ( numbers . the_track_number sz '.' '' . the_artist sz 
++	span(all_but_dash) . the_song_title ) . the_raw_title rpos(0)
+
+	
+	
+	
+* where there is sometimes a track list, sometimes there is a table - this is the indicator for that.	
+	track_table_pattern1 = 't Track Listing:'
+	
+	
+	
+	
+* ^^^ thats geomagnetic - now for some other ones:
+* beatport
+* and yandex.ru
+* these sites use bing to search - and then based on that go to the beatport or yandex site -
+* so beatport and yandex use a simple find to get the link
+* its a bing_result
+* example:
+* s a title="music.yandex.ru" target="_blank" href="https://music.yandex.ru/album/1447815/track/13309632" h="ID=images,5244.1"
+* https://www.beatport.com/release/dubstep-drs-wobble-factory-v-1-best-top-electronic-dance-hits-dub-brostep-psystep-rave-anthem/1036615
+ 
+	bing_result_pattern = "s a " span(&alphabet) . the_stuff rpos(0)
+
+	bing_result_inner_pattern1 = '"https://www.beatport.com/'
+	bing_result_inner_pattern2 = '"https://music.yandex.ru/'
+	bing_result_inner_pattern3 = '"https://bassstarrecords.bandcamp.com/'
+	brip3 			  = '"https://geomagneticrecords.bandcamp.com/'
+	brip4 			  = '"https://beatspace-geomagnetic.bandcamp.com/'
+	brip5 			  = '"https://goarecords.bandcamp.com/'
+	brip6 			  = '"https://parabolamusic.bandcamp.com/'
+	brip7 			  = '"https://powerhouserecords.bandcamp.com/'
+	brip8 			  = '"https://spiraltrax.bandcamp.com/'
+	brip9			  = '"https://www.discogs.com/'
+
+	
+	
+	
+		bing_result_inner_patterns = bing_result_inner_pattern1 | bing_result_inner_pattern2
++		| bing_result_inner_pattern3 | brip3 | brip4 | brip5 | brip6 | brip7 | brip8
+* bandcamp url s a href="https://bassstarrecords.bandcamp.com/album/mr-lemurian-remixes-ep" h="ID=SERP,5093.1"
+
+
+	
+	bing_image_result = 's img src="' break('"') . the_url 
+	
+* bandcamp is different	
+*	<img src="https://f4.bcbits.com/img/a4140846278_16.jpg" itemprop="image">
+	bandcamp_image_result = 's img src="' break('"') . the_url '"' sz 'itemprop="image"'
+
+	
+	beatport_product_start = 'window.ProductDetail = {'
+	
+	beatport_product_artists = sz '"artists": ['
+	beatport_product_artists2 = sz '{'
+	beatport_product_artists3 = sz '"name":' sz '"' break('"') . the_artist '"'
+	beatport_product_catalog = sz '"catalog":' sz '"' break('"') . the_catalog '"'
+	beatport_product_name = sz '"name":' sz '"' break('"') . the_item_name '"'
+	
+* beatport cd info in
+* window.ProductDetail = {
+* "artists": 
+*           {
+*    "name": "the_name"
+*
+*"catalog": "BASSEP002",	
+* "date": {
+* "published": "2010-11-23",
+*   "released": "2010-11-23"
+*
+*  "name": "Massiv EP",
+* "price": {
+*       "value": 7.45
+* 
+
+
+
+* for tracks:
+* <ul class="bucket-items  ec-bucket">
+*   <li class="bucket-item ec-item track" data-ec-position="1"
+*		data-ec-name="Hold On"
+*		data-ec-category="Tracks"
+*			data-ec-d1="Chang"
+*     <div class="buk-track-num">1</div>
+*    <p class="buk-track-title">
+*        <span class="buk-track-primary-title" title="Hold On">Hold On</span>
+*    <a href="/artist/chang/109580" data-artist="109580">Chang</a>
+*  <p class="buk-track-bpm">78</p>
+*          <p class="buk-track-key">C maj</p>
+*          <p class="buk-track-length">6:07</p>
+*  </li>
+*
+*    <li class="bucket-item ec-item track" data-ec-position="2"
+	backport_start_tracks = 's ul class="bucket-items' sz 'ec-bucket"'  
+	backport_start_track = 's li class="bucket-item ec-item track"' sz arbno(any(&alphabet)) . the_s_li rpos(0)
+	backport_title = 'data-ec-name="' break('"') . the_song_title  '"'
+	backport_track_artist =  'data-ec-d1="'  break('"') . the_track_artist  '"'
+	backport_track_num = 's div ' arbno(any(&alphabet)) 'class="buk-track-num"'
+	backport_track_data = 't '  arbno(any(&alphabet)) . the_track_number rpos(0)
+	backport_end_track = 'e li'
+        backport_end_trackmode = 'e ul'
+ 
+
+*	
+				
+	terminal = 'to_functiosns'
+
+	:(to_functions)
+done_functions
+
+	terminal = 'done_functiosns'
+
+
+bigloop	&anchor = 1
+	x = input	:f(endd)
+	x da_pattern	:f(error_huh)
+	the_station_name 	allnull = ''
+	the_folder 		allnull = ''
+	the_unescaped_folder	allnull = ''
+	the_featured_artist	allnull = ''
+	the_album_title		allnull = ''
+	the_marketing_label	allnull = ''
+	the_year		allnull = ''
+	the_genre		allnull = ''
+	
+	
+	&anchor = 0
+	
+
+	
+	
+	&anchor = 1
+
+	
+	terminal = 'screpe1g ' the_cd_short_name	
+	scrape_image1_geomagnetic(the_station_name,the_cd_short_name,the_folder,the_unescaped_folder)
+	terminal = 'done screpe1g ' the_cd_short_name	
+
+	:(bigloop)
+		
+			
+				
+					
+	
+error_huh
+	terminal = 'errror huh ' x
+	:(bigloop)
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+	
+
+	
+	
+	
+to_functions
+
+
+* q - handle quotes for making sql scripts.
+* should also handle weird characters as well at some point
+* like char(18) -ctrl q
+	define('q(xin)') :(done_q)
+q       &anchor = 0   
+	ident(xin,'') :s(qnull)
+ql0     xin "\\" = "fdsjkfslddsjkl" :s(ql0)
+ql1     xin "\'" = 'hsfdakfahfiue' :s(ql1)
+ql2     xin "'" = 'hsfdakfahfiue' :s(ql2)
+ql3     xin 'hsfdakfahfiue' = "''" :s(ql3) 
+ql4     xin "\" rpos(0) = ''   :s(ql4)
+ql5     xin "fdsjkfslddsjkl" = "\\"     :s(ql5)
+	&anchor = 1
+	q = "'" xin "'"
+	:(return)
+qnull   q = 'NULL'
+	:(return)
+done_q
+
+
+* r - good for things linke numbers with quotes or null - cousin to q
+	define('r(xin)') :(done_r)
+r       ident(xin,'') :s(rnull)
+	r = xin
+	:(return)
+rnull
+	r = 'NULL'
+	:(return)
+
+done_r
+
+
+
+* d - number * 1million - good for converting unix dates to integer values
+* this is here becaquse real numbers dont work in indexes in mysql
+* version 2 - handles anchor and creates patterns it needs
+	define('d(xin)a,p1,p2,anumber,number') :(done_d)
+d       ident(xin,'') :s(dnull)
+	a = &anchor
+	&anchor = 1
+	anumber = any('0123456789')
+	number = span('0123456789')
+	xin number . p1 '.' ( anumber anumber anumber anumber anumber anumber ) . p2 rpos(0)    = p1 p2 :s(dok)
+	xin number . p1 '.' ( anumber anumber anumber anumber anumber ) . p2 rpos(0)	    = p1 p2 '0'     :s(dok)
+	xin number . p1 '.' ( anumber anumber anumber anumber ) . p2 rpos(0)		    = p1 p2  '00'   :s(dok)
+	xin number . p1 '.' ( anumber anumber anumber ) . p2 rpos(0)			    = p1 p2 '000'   :s(dok)
+	xin number . p1 '.' ( anumber anumber ) . p2 rpos(0)				    = p1 p2 '0000'  :s(dok)
+	xin number . p1 '.' ( anumber ) . p2 rpos(0)					    = p1 p2 '00000' :s(dok)
+	xin number . p1 '.' '' . p2 rpos(0)						     = p1 p2 '000000'	:s(dok)
+	xin number . p1 '' . p2 rpos(0)							 = p1 p2  '000000'       :s(dok)
+	d = 'cast((' xin '*1000000.) as unsigned)'
+	&anchor = a
+	:(return)
+	
+dok
+	&anchor = a
+	d = xin
+	:(return)
+dnull
+	d = 'NULL'
+	:(return)
+
+done_d
+
+
+
+
+* cheap converter of filenames to url
+	define('to_url(url)a,b,c') :(done_to_url)
+to_url
+	a = &anchor
+	&anchor = 0
+tourll1	url ' ' = '%20'	:s(tourll1)
+	&anchor = a
+	to_url = url	:(return)
+done_to_url
+
+
+* See if the filename first line is empty or not
+* always true return, but returns '' if no file or no first line
+	define('read_filename(filename)a,b,c')  :(done_read_filename)
+read_filename
+	b = input('c',13,'',filename)	:f(read_filename_no)
+	read_filename = c	:f(read_filename_no2)
+	detach('c')
+	:(return)	
+	
+read_filename_no
+	terminal = 'error opening ' filename
+	read_filename = ''	:(return)
+read_filename_no2
+	terminal = 'error reading' filename
+	read_filename = ''	
+	detach('c')
+	:(return)
+		
+done_read_filename
+
+
+* add_artist will add to the artists table and assign to the cd, and possibly track
+* affects sr_artists, sr_cd_tracks, sr_cd_track_artists, and sr_cd_artists table.
+* result is appended to sr_artists_sql, sr_cd_track_artists_sql, etc.
+*importance_seq id 1 for primary, 2 for credit stuff
+*type is "collaborator" or "main"
+
+	define('add_artist(the_artist_code,the_artist_name,'
++	 'the_station_name,the_cd_short_name,the_track_number,'
++        'importance_seq,type)a,b,c,d,e')	:(done_add_artist)
+add_artist	
+	
+	b = importance_seq
+	d = importance_seq + 2
+ 	sr_artists_sql = sr_artists_sql sr_artists_comma
++	  'insert into sr_artists(artist_code,artist_name) '
++	  'select ' 
++    q(the_artist_code)	',' q(the_artist_code) ' where not exists ('
++         '  select 1 from sr_artists where artist_code = ' q(the_artist_code)
++         '  union all 	'
++         '  select 1 from sr_artists where artist_name = ' q(the_artist_code) ');'
+	sr_artists_comma = char(10)
+	got_artists = 2
+
+	ident(the_track_number,'')		:s(aa_no_track)
+	add_track(the_station_name,the_cd_short_name,the_track_number,the_raw_title,the_song_title)
+aa_again	
+	gt(b,d) :s(return)
+	sr_cd_track_artists_sql = sr_cd_track_artists_sql sr_cd_artists_comma 
++  	  'insert into sr_cd_track_artists(station_name,cd_short_name,track,sequence,type,'
++	  'artist_id)'
++         'select ' q(the_station_name) ',' q(the_cd_short_name) ',' q(the_track_number) ","
++            b "," q(type) ",(select artist_id from sr_artists where artist_code= "
++           q(the_artist_code) 
++         ' ) where not exists(select 1 from sr_cd_track_artists where station_name = '  q(the_station_name) 
++          '      and cd_short_name = ' q(the_cd_short_name) ' and track = ' q(the_track_number) ' and sequence = ' b ')'
++         ' and not exists(select 1 from sr_cd_track_artists where station_name = '  q(the_station_name) 
++          '      and cd_short_name = ' q(the_cd_short_name) ' and track = ' q(the_track_number) 
++        ' and artist_id =(select artist_id from sr_artists where artist_code= ' q(the_artist_code) '));'
++           char(10)
+	got_artist_tracks = 2
+	sr_cd_track_artists_sql = sr_cd_track_artists_sql char(10)
+        b = b + 1	
+	:(aa_again)
+	
+aa_no_track	
+aa_again2
+	gt(b,d) :s(return)
+	sr_cd_artists_sql = sr_cd_artists_sql sr_cd_artists_comma 
++  	  'insert into sr_cd_artists(station_name,cd_short_name,sequence,type,'
++	  'artist_id)'
++         'select ' q(the_station_name) ',' q(the_cd_short_name) ','
++            b "," q(type) 
++           ",(select artist_id from sr_artists where artist_code= " q(the_artist_code) ")"
++         ' where not exists(select 1 from sr_cd_artists where station_name = '  q(the_station_name) 
++          '      and cd_short_name = ' q(the_cd_short_name) ' and sequence = ' b ')'
++         ' and not exists(select 1 from sr_cd_artists where station_name = '  q(the_station_name) 
++          '      and cd_short_name = ' q(the_cd_short_name) 
++         ' and artist_id =(select artist_id from sr_artists where artist_code=' q(the_artist_code) '));'
++           char(10)
+	sr_cd_artists_sql = sr_cd_artists_sql char(10)
+        b = b + 1	
+	:(aa_again2)
+	
+done_add_artist
+
+
+* add or modify track information
+* this affects the table sr_cd_trackx znc sr_song_info
+	define('add_track(the_station_name,the_cd_short_name,the_track_number,raw_title,the_song_title)a,b,c,d,e') :(add_track_done)
+add_track
+	terminal = 'add_track'
+	sr_cd_tracks_sql = sr_cd_tracks_sql sr_cd_tracks_comma 
++  	  'insert into sr_cd_tracks(station_name,cd_short_name,track,raw_track_text,title)'
++         'select ' q(the_station_name) ',' q(the_cd_short_name) ',' q(the_track_number) ","
++            q(raw_title) "," q(the_song_title)
++         ' where not exists(select 1 from sr_cd_tracks where station_name = '  q(the_station_name) 
++          '      and cd_short_name = ' q(the_cd_short_name) ' and track = ' q(the_track_number) ');'
++         char(10)
++	'update sr_song_info set cd_track = cast(track as int) where station_name = '  q(the_station_name) 
++          '      and cd_short_name = ' q(the_cd_short_name) 
++          " and track REGEXP '^[0-9]+$' "
++	     " and cd_track is null "
++           ' and exists ('
++           ' select 1 from sr_cd_tracks'
++           '  where station_name = '  q(the_station_name) 
++           '   and cd_short_name = ' q(the_cd_short_name) 
++           ' and sr_cd_tracks.track = cast(sr_song_info.track as int));'
++         char(10)
+	got_tracks = 2
+
+	sr_cd_tracks_comma = char(10)
+	:(return)
+    
+add_track_done 
+
+
+
+
+* s img src="https://geo-media.beatport.com/image/c1edd53a-1302-4e6a-8417-5c909ef0bfec.jpg"
+* s img src="//avatars.yandex.net/get-music-content/34131/d4fa9719.a.1447815-1/200x200"
+
+* add_image adds the image by reading it into the raw and merch folder
+* and by managing sr_picture_info
+* the merch folder is resized to a standard size. raw is the full size
+* but the image is converted to png in all cases
+	define('add_image(the_track_number,ximage_url,new_image_name)a,b,c,d,e') :(done_add_image)
+add_image
+	terminal = 'a1 ' ximage_url
+	sr_picture = ''
+	a = &anchor
+	terminal = 'a ' ximage_url
+	terminal = 'aaaaa'
+	ident(the_folder)	:s(return)
+	
+	
+	&anchor = 1
+	
+	iaccess_type = ''
+	idomain_name = ''
+	this_current_url ( 'http:' | 'https:' ) . iaccess_type '//' span(not_slash) . idomain_name arbno(any(&alphabet)) . irest1 
++			rpos(0)	:f(ai_hey_no_current_url)
+	ifolder = ''
+	iparams = ''
+	irest1  ( '' rpos(0) ) 
++		| ( '/' rpos(0) ) 
++		|  ( ( '/' break('?') ) . ifolder ( '?' arbno(any(&alphabet)) ) . iparams ) 
+*               | ( '/' arbno(any(not_question)) rpos(0) ) . ifolder      :f(ai_hey_rest_doesnt_parse)
+	terminal = iaccess_type ' // ' idomain_name ' '  ifolder ' ' iparams
+	ifilename = ''
+	
+	
+	
+	
+	ximage_url '//' = iaccess_type '//'
+	&anchor = 0
+	
+*	ximage_url '200x200' = '1000x1000'		:s(russian)
+	
+	terminal = 'b ' ximage_url
+	&anchor = 1
+	ximage_url span(not_slash) rpos(0) :s(ai_just_image)
+	terminal = ' not just image'
+	ximage_url '/' :s(ai_dir_astart)
+	
+	terminal = ' not dir atstart'
+	&anchor = 0
+	ximage_url '/' arbno(any(not_slash)) . filename rpos(0)
+	&anchor = 1
+	terminal = 'c8 ' ximage_url 
+	:(ai_ready)	
+
+ai_hey_no_current_url
+	terminal = 'ai_hey_no_current_url:'
+	terminal = this_current_url
+	:(return)
+	
+ai_hey_rest_doesnt_parse
+	terminal = 'ai_hey_rest_doesnt_parse'
+	terminal = this_current_url
+	terminal = 'rest: ' irest1
+	:(return)
+	
+				
+	
+ai_just_image
+	terminal = 'b2' ximage_url
+	filename = ximage_url
+ai_dir_astart	
+	c = this_current_url
+	terminal = 'c1' c
+
+	&anchor = 0
+	c '.html' rpos(0) :s(ai_has_html)
+	c '/' rpos(0) = ''
+	&anchor = 1
+	terminal ='c7 ' ximage_url
+	ximage_url '/'  :s(ai_missing_domain)
+	ximage_url = c '/' ximage_url	
+	:(ai_ready)
+	
+ai_missing_domain 	
+	&anchor = 1
+	c ( ( 'http:' | 'https:' ) '//' span(not_slash) ) . d
+	c = d
+	terminal = 'd ' c
+	ximage_url = c  ximage_url	
+	:(ai_ready)	
+	
+ai_has_html	
+	terminal = 'f ' c
+	c '/' arbno(any(not_slash)) rpos(0) = ''
+	&anchor = 1
+	ximage_url = c '/' ximage_url	
+	:(ai_ready)
+	
+ai_ready	
+	terminal = 'g ' c
+
+	&anchor = 0
+	ximage_url span(not_slash) . filename rpos(0)  
+	&anchor = 1
+	
+	host(1,'echo 1>&2 "getting $ALBUM_NAME image at ' ximage_url ' file ' filename '"')
+	
+	host(1,"rm 2>/dev/null " filename)
+	
+	cmd = 'wget "' ximage_url '"'
+	terminal = cmd
+	host(1,cmd)
+	
+	
+	terminal = 'ls 2>/dev/null >a.result "' filename '"'
+	host(1,'ls 2>/dev/null >a.result "' filename '"')
+	
+	
+	actual_filename = read_filename("a.result")
+	
+	ident(actual_filename,'') :s(addiend)
+        
+	callit2 = 'mkdir -p raw/' the_folder
+	terminal = callit2
+	host(1,callit2)
+	
+	callit2 = 'mkdir -p merch/' the_folder
+	terminal = callit2
+	host(1,callit2)
+	
+	callit2 = 'convert "' actual_filename '" raw/' the_folder '/' new_image_name
+	terminal = callit2
+	host(1,callit2)
+			
+	callit2 = 'convert "' actual_filename '" -resize 480x480 merch/' the_folder '/' new_image_name
+	terminal = callit2
+	host(1,callit2)
+	
+	callit2 = 'rm 2>/dev/null "' actual_filename '"'
+	terminal = callit2
+	host(1,callit2)
+			
+        the_picture =  the_unescaped_folder '/' new_image_name
+        the_picture './' = ''
+
+	
+	sr_picture_sql = sr_picture_sql sr_picture_comma  
++            'insert into sr_picture_info(station_name,picture) '
++		'select '   q(the_station_name) ',' q(the_picture)
++               ' where not exists (select 1 from sr_picture_info where station_name= ' q(the_station_name)
++               ' and picture= ' q(the_picture) ');'
+	sr_picture_comma = char(10)
+addiend
+	&anchor = a
+	add_image = the_picture
+	:(return)
+done_add_image
+
+
+
+
+*   lower and upper case odf string
+*   make a string lower case
+        define('lower(s)')
+        define('upper(s)')
+        UP_LO  =  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+        LO_UP  =  'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
+        HI_UP  =  'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                                                :(UPLO_END)
+lower    lower   =  REPLACE(S, UP_LO, LO_UP)      :(RETURN)
+upper    upper   =  REPLACE(S, UP_LO, HI_UP)      :(RETURN)
+UPLO_END
+
+
+
+
+* scrape_image1_geomagnetic - looks on many sites for information on the CD, scrapes the headinfo and cd image
+* and also scrapes artist and title info if available.
+* it opens a main file for various urls - if they exist, and then reads them
+* some urls point to a second site - where the second site usually has the CD cover.
+* first place to look is geomagnetic.tv/news - there are a couple of variants of the cd name based on case
+* then it goes to ...
+	define('scrape_image1_geomagnetic(the_station_name,the_cd_short_name,the_folder,the_unescaped_folder)')  :s(done_scrape_image1_geomagnetic)
+	
+scrape_image1_geomagnetic
+	:(parse_main)
+* jumped to by scrape_image1_geomagnetic and returns after outputting
+parse_main
+							
+	
+* lets see how we do			
+* these let us know if we got it or not.
+* set to 0 - dont got it.
+* set to 2 - just got it - but keep reading ( good for tracks, artists, etc)
+* set to 1 - got it from an earlier pass.
+* these keep us for over-scraping - because the first get of information is usally the best.
+	got_image_head = 0
+	got_cd_cover = 0
+	got_tracks = 0
+	got_artists = 0
+	got_artist_tracks = 0
+	
+	image_head_url = ''
+	imagemain_url = ''
+	the_image_head_url = ''
+	the_image_url = ''
+
+	t = ''
+	t = table()
+	the_item_name = ''
+	the_catalog = ''
+	
+* initialize all the sql buffers - they are all printed out in order at the end - see output_to_html for that code.	
+	sr_artists_sql = ''
+	sr_artists_comma = ''
+	
+	sr_email_sql = ''
+	sr_email_comma = ''
+	
+	sr_cd_tracks_sql = ''
+	sr_cd_tracks_comma = ''
+	
+	sr_cd_track_artists_sql = ''
+	sr_cd_track_artists_comma = ''
+	
+	sr_cd_artists_sql = ''
+	sr_cd_artists_comma = ''
+	no_cd_for_short_name = the_cd_short_name
+	&anchor = 0
+l888	no_cd_for_short_name '-' arbno(any(&alphabet)) rpos(0) = ''	 
+
+	host(1,"rm 2>/dev/null -rf x_" the_cd_short_name)
+	host(1,"mkdir x_" the_cd_short_name)
+	
+* make these varianbts of cd_short_name			
+	lcd_short_name = lower(no_cd_for_short_name)
+	ucd_short_name = upper(no_cd_for_short_name)
+	dubstEP_cd_short_name = lcd_short_name
+	&anchor = 0
+	dubstEP_cd_short_name 'step' = 'stEP'
+	
+	scrape_site_count = 0
+	
+	scrape_site( 'http://www.geomagnetic.tv/news/' no_cd_for_short_name '/','geomagnetic')			
+* lets see if we are done early	
+	ident(status,'11111')	:s(output_the_sql)
+	
+	ident(no_cd_for_short_name,lcd_short_name)	:s(skip_geo_lower)
+	scrape_site( 'http://www.geomagnetic.tv/news/' lcd_short_name '/','geomagnetic')			
+	ident(status,'11111')	:s(output_the_sql)
+	
+skip_geo_lower	
+	ident(no_cd_for_short_name,ucd_short_name)	:s(skip_geo_upper)
+	scrape_site( 'http://www.geomagnetic.tv/news/' ucd_short_name '/','geomagnetic')			
+	ident(status,'11111')	:s(output_the_sql)
+
+skip_geo_upper
+	ident(no_cd_for_short_name,ddubstEP_cd_short_name)	:s(skip_geo_dubstEP)
+	scrape_site( 'http://www.geomagnetic.tv/news/' dubstEP_cd_short_name '/' ,'geomagnetic')			
+	ident(status,'11111')	:s(output_the_sql)
+	ident(status,'01111')	:s(output_the_sql)
+*        ^^^ we dont do headers in the non geomagnetic sites	
+	
+skip_geo_dubstEP
+* here add the other ones
+
+* geo main
+*        scrape_site('https://www.bing.com/?q=site%3Ageomagnetic.tv+' no_cd_for_short_name 
+*+		 ,'general')
+
+*	ident(status,'11111')	:s(output_the_sql)
+*	ident(status,'01111')	:s(output_the_sql)
+*        ^^^ we dont do headers in the non geomagnetic sites	
+* yandex.ru
+* disable because nothing coming up
+*        scrape_site('https://www.bing.com/?q=site%3Amusic.yandex.ru+' no_cd_for_short_name 
+*+		'&FORM=HDRSC2','yandex')
+
+	
+*	beatport
+	scrape_site('https://www.bing.com/search?q=site%3Awww.beatport.com%20'
++	no_cd_for_short_name,'beatport')
+	ident(status,'11111')	:s(output_the_sql)
+* ^^^ did not get basscd015
+	
+	ident(status,'01111')	:s(output_the_sql)
+*        ^^^ we dont do headers in the non geomagnetic sites	
+
+				
+*	not ready
+*	scrape_site('https://www.bing.com/search?q=site%3Awww.discogs.com+' no_cd_for_short_name,
+*+	   'discogs')
+*
+*	ident(status,'11111')	:s(output_the_sql)
+	
+	
+        scrape_site('https://www.bing.com/?q=' no_cd_for_short_name 
++		 ,'general')
+	ident(status,'11111')	:s(output_the_sql)
+	
+	
+	ident(status,'00000')	:f(output_the_sql)
+	terminal = 'FAIL ' the_cd_short_name 
+
+	host(1,'echo ' status '>x_' the_cd_short_name "/s.txt")
+	host(1,"mv g[a-g]*.* x_" the_cd_short_name)
+	:(return)
+	
+	
+	
+	
+output_the_sql
+
+	host(1,'echo ' status '>x_' the_cd_short_name "/s.txt")
+	host(1,"mv g[a-g]*.* x_" the_cd_short_name)
+	
+	terminal = 'dofodf'
+*	add artist if in other info
+	ident(t['Artist']) 	:s(no_add_extra_artist)
+	ident(t['Artist'],the_main_artist_code) 	:s(finished_artist_finesse)
+	
+	this_artist = t['Artist']
+	
+	terminal = '1'
+    track_artist_code1 = this_artist
+    track_artist_code2 = ''
+    &anchor = 1
+    this_artist arbno(any(not_amp)) . track_artist_code1 sz '&amp;' sz arbno(any(&alphabet)) . track_artist_code2 rpos(0) 
+    terminal = 'thea ' this_artist
+    terminal = 'tc1 ' track_artist_code1
+    terminal = 'tc2 ' track_artist_code2
+    
+        ident(track_artist_code1)       :s(finished_artist_finesse)
+	
+	add_artist(track_artist_code1,track_artist_code1,the_station_name,the_cd_short_name,'',1,'Main')
+        ident(track_artist_code2)       :s(finished_artist_finesse)
+	
+	add_artist(track_artist_code2,track_artist_code2,the_station_name,the_cd_short_name,'',1,'Main')
+	terminal = '2'
+	:(finished_artist_finesse)
+	
+no_add_extra_artist
+	terminal = '3'
+	t['Artist'] = the_main_artist_code	:(finished_artist_finesse)
+finished_artist_finesse
+	terminal = '4'
+
+	output = sr_artists_sql
+	output = sr_email_sql
+	output = sr_cd_tracks_sql
+	output = sr_cd_track_artists_sql
+	output = sr_cd_artists_sql
+	output = sr_pictures_sql
+	terminal = '5'
+	output = 'update sr_cds set '
++	   'cmd=' q(t['cmd']) ','
++	   'bn=' q(t['bn']) ','
++	   'business=' q(t['business']) ','
++	   'item_name=' q(t['item_name']) ','
++	   'item_number=' q(t['item_number']) ','
++	   'amount=' q(t['amount']) ','
++	   'currency_code=' q(t['currency_code']) ','
++	   'shipping=' q(t['shipping']) ','
++	   'shipping2=' q(t['shipping2']) ','
++	   'image_url=' q(the_image_url) ','
++	   'imagehead_url =' q(the_image_head_url) ','
++	   'undefined_quantity=' q(t['undefined_quantity']) ','
++	   'receiver_email=' q(t['receiver_email']) ','
++	   'mrb=' q(t['mrb']) ','
++	   'pal=' q(t['pal']) ','
++	   'no_shipping=' q(t['no_shipping']) ','
++	   'no_note=' q(t['no_note']) ','          
++	   'title='  q(t['Title']) ','
++	   'artist=' q(t['Artist']) ','
++          'label=' q(t['Label']) ','
++          'format=' q(t['Format']) ','
++          'barcode=' q(t['Barcode']) ','
++          'the_release=' q(t['Release']) 
++	   ' where station_name=' q(the_station_name)
++          ' and cd_short_name = ' q(the_cd_short_name) ';'
+	:(return)
+*             ^^^ done with one cd
+
+	
+	
+done_scrape_image1_geomagnetic
+
+
+
+
+
+	define('scrape_site(a_url,general_type)')  :s(done_scrape_site)
+	
+scrape_site
+	this_current_url = a_url
+	
+	scrape_site_count = scrape_site_count + 1
+	f_number = 97 + scrape_site_count - 1
+	f_simple = 'g' char(f_number)
+	terminal = 'sim ' f_simple
+	f_name = f_simple '.html'
+	f_tok = f_simple '.tok'
+	
+	
+	host(1,"rm -f 2>/dev/null " f_name)
+	
+	ident(general_type,'geomagnetic')	:f(use_firefox)
+	cmd = 'curl -k -sA "Chrome" -L "' a_url '" -o ' f_name
+	host(1,cmd)
+	
+	host(1,"html_to_tokens 2>/dev/null " f_name ' >' f_tok )
+	
+	:(initialize)
+	
+use_firefox
+	cmd = '$SR_BIN/firefox_url "' a_url '" "' f_simple '"'
+	terminal = cmd
+	host(1,cmd)
+	
+	host(1,"html_to_tokens 2>/dev/null " f_name '>' f_tok)
+	:(initialize)
+		
+	
+* jumped to by scrape_site
+initialize
+
+* pass 1 - opriginal url, pass 2 - second url ,  there is code for pass 3 - but that never helped.
+* need 2 usually to find the best cd cover picture
+	loop_pass = '1'
+	
+* changed states allow for different modes based on indicators in the token file	
+	state = 'normal'	
+* just like there are main states, there are mini states for being in a table structure - used primarily to get track information.	
+	table_state = 'nominal'
+
+	the_url = ''
+	the_next_url = ''	
+	
+
+	terminal = 'got first file ' a_url
+	host(1,"ls -l 2>/dev/null ' f_name ' ' f_tok ' | cat 1>&2")
+		
+	b = input('first_file',14,'',f_tok)	:f(cant_open_first_file)
+	
+loopstate	
+	state = 'normal'
+	
+loop	&anchor = 1
+	l = 'loop_pass_' loop_pass
+	:($l)
+	
+loop_pass_1	
+	x = first_file	:f(done)
+	:(loop_continue)
+
+loop_pass_2
+	x = next_file	:f(done)
+	:(loop_continue)
+
+loop_pass_3
+	x = third_file	:f(done)
+	:(loop_continue)
+
+loop_continue
+	ident(general_type,'geomagnetic')	:s(loop_continue_geomagnetic)
+	ident(general_type,'beatport')	:s(loop_continue_beatport)
+	ident(general_type,'yandex')	:s(loop_continue_yandex)
+	ident(general_type,'bandcamp')	:s(loop_continue_bandcamp)
+*	ident(general_type,'discogs')	:s(loop_continue_discogs)
+	:(loop)
+	
+loop_continue_discogs
+	ident(loop_pass,'1')	:s(loop_continue_discogs_pass1)
+	:(loop_continue_discogs_pass2)	
+
+
+
+loop_continue_discogs_pass1
+	x bing_result_pattern	:s(got_discogs_url1)
+	:(loop)
+
+got_discogs_url1
+	&anchor = 0
+	the_stuff bing_result_inner_patterns  :s(discogs_righton)
+	&anchor = 1
+	:(loop)
+
+discogs_righton
+	terminal = 'righton  ' x 
+	terminal = 'rightnext ' the_next_url
+	ident(the_next_url)	:f(loopstate)
+	the_stuff 'href="' break('"') . the_url :f(loop)
+	the_next_url = the_url
+	terminal = 'discogs found_url'
+	terminal = the_url
+	:(loop)
+
+loop_continue_discogs_pass2
+	got_cd_cover '1'	:s(discogs_pass2_skip_image_search)
+	x discogs_image_result	:f(discogs_pass2_skip_image_search)
+        &anchor = 1
+        the_url '//' = 'https://'
+	the_image_url = add_image('',the_url,'front_cover.png')
+	got_cd_cover = 1
+
+discogs_pass2_skip_image_search
+	:(loop)
+
+
+
+	
+cant_open_first_file
+	terminal = 'cant open first file'
+	:(really_done)	
+
+
+
+
+
+
+
+
+
+
+loop_continue_beatport
+	ident(loop_pass,'1')	:s(loop_continue_beatport_pass1)
+	:(loop_continue_beatport_pass2)	
+
+loop_continue_beatport_pass1
+	x bing_result_pattern	:s(got_beatport_url1)
+	:(loop)
+
+got_beatport_url1
+	&anchor = 0
+	the_stuff bing_result_inner_patterns  :s(beatport_righton)
+	&anchor = 1
+	:(loop)
+
+beatport_righton
+	&anchor = 1
+	ident(the_next_url)	:f(loopstate)
+	the_stuff 'href="' break('"') . the_url :f(loop)
+	the_next_url = the_url
+	terminal = 'beatport found_url'
+	terminal = the_url
+	:(loop)
+
+loop_continue_beatport_pass2
+	got_cd_cover '1'	:s(beatport_pass2_skip_image_search)
+	x bing_image_result	:f(beatport_pass2_skip_image_search)
+        &anchor = 1
+        the_url '//' = 'https://'
+	the_image_url = add_image('',the_url,'front_cover.png')
+	got_cd_cover = 1
+
+beatport_pass2_skip_image_search
+	x 't '	:f(beatport_not_script)
+	&anchor = 0
+	x beatport_product_start	:s(got_beatport_product_start)
+beatport_not_script
+	&anchor = 1
+	ident(state,'normal')	:s(beatport_rest_normal)
+
+	l = 's' state
+	:($l)
+
+beatport_rest_normal
+	&anchor = 1
+beatport_rest
+
+	x backport_start_tracks	:s(got_beatport_start_tracks)
+	:(loop)
+
+sbeatport_product
+	x beatport_product_artists2	:s(got_beatport_product_start2)
+	:(beatport_rest)
+
+sbeatport_product3
+	x beatport_product_artists3	:s(got_beatport_product_start3)
+	:(beatport_rest)
+
+
+sbeatport_start_tracks
+	x backport_start_track	:s(got_beatport_start_track)
+	x backport_end_trackmode :s(loopstate)
+	:(beatport_rest)
+	
+
+
+sbeatport_start_track
+	x backport_track_num	:s(got_beatport_track_num)
+	x backport_end_track  :s(got_beatport_end_track)
+	x backport_end_trackmode :s(loopstate)
+	:(beatport_rest)
+
+sbeatport_tracknum
+	x backport_track_data :s(beatport_backtostack)
+	x backport_end_track  :s(got_beatport_end_track)
+	x backport_end_trackmode :s(loopstate)
+	:(loop)
+
+
+got_beatport_catalogue
+	t['Catalogue'] = the_catalog
+	:(got_beatport_product_start_p2)
+
+got_beatport_item_name
+	t['item_name'] = the_item_name
+	:(got_beatport_product_start_p2)
+
+got_beatport_start_tracks
+	&anchor = 0
+	state = 'beatport_start_tracks'
+	:(loop)
+
+got_beatport_start_track
+	&anchor = 0
+	
+	the_song_title = ''
+	the_track_number = ''
+	the_track_artist = the_artist
+	terminal = 'the_s_lis is ' the_s_li
+	
+	&anchor = 0
+	the_s_li backport_title	:f(beatport_no_title)
+	the_raw_title = the_song_title
+	terminal = 'title is ' the_song_title
+	the_s_li backport_track_artist 
+	&anchor = 1
+	terminal = 'tartist ' the_track_artist
+beatport_backtostack
+	state = 'beatport_start_track'	
+	:(loop)
+
+
+got_beatport_track_num
+	state = 'beatport_tracknum'
+	:(loop)
+
+got_beatport_end_track
+	terminal = ' end beatport track '
+	ident(the_track_number,'')	:s(beatport_no_track_number)
+	
+	add_track(the_station_name,the_cd_short_name,the_track_number,the_raw_title,the_song_title)
+	
+	ident(the_track_artist,'')	:s(beatport_dont_add_track_artist)
+	
+	add_artist(the_track_artist,the_track_artist,the_station_name,the_cd_short_name,the_track_number,1,'Main')
+beatport_dont_add_track_artist
+	state = 'beatport_start_tracks'	
+	:(loop)
+		
+beatport_no_track_number
+	terminal = 'no track number found in ' the_s_li
+* dont go inside this track
+	&anchor = 1
+	the_artist = xartist2
+	state = 'beatport_start_tracks'	
+	:(loop)
+
+beatport_no_title
+	terminal = 'no title found in ' the_s_li
+* dont go inside this track
+	&anchor = 1
+	:(loop)
+
+
+got_beatport_product_start
+	&anchor = 1
+	
+	terminal = 'beatport_product_start'
+llbp1	x beatport_product_start = ''	:s(got_beatport_product_start_p2)
+	x any(&alphabet) = ''	:(llbp1)
+
+got_beatport_product_start_p2
+	x beatport_product_artists = ''	:s(got_beatport_product_start_p3)
+	x beatport_product_name	= '' :s(got_beatport_item_name)
+	x beatport_product_catalog = '' :s(got_beatport_catalogue)
+	x sz '"' break('"') '"' ':' sz '"' break('"') '"' ( ',' |  '' ) sz = ''	:s(got_beatport_product_start_p2)
+	x any(&alphabet) = ''  :s(got_beatport_product_start_p2)
+	terminal = 'done beatport product stuff p2'
+	:(loop)
+
+got_beatport_product_start_p3
+	x beatport_product_artists2 = '' :s(got_beatport_product_start_p4)
+	x beatport_product_catalog = '' :s(got_beatport_catalogue)
+	x sz '"' break('"') '"' ':' sz '"' break('"') '"' ( ',' |  '' ) sz = ''	:s(got_beatport_product_start_p3)
+	x any(&alphabet) = ''  :s(got_beatport_product_start_p3)
+	terminal = 'done beatport product stuff p3'
+	:(loop)
+	
+got_beatport_product_start_p4
+	x beatport_product_artists3 = '' :s(got_beatport_product_start_p5)
+	x beatport_product_artists2 = '' :s(got_beatport_product_start_p4)
+	x sz '"' break('"') '"' ':' sz '"' break('"') '"' ( ',' |  '' ) sz = ''	:s(got_beatport_product_start_p4)
+	x any(&alphabet) = ''  :s(got_beatport_product_start_p4)
+	terminal = 'done beatport product stuff p4'
+	:(loop)
+
+got_beatport_product_start_p5
+	terminal = 'got an artist             artist ' the_artist
+	add_artist(the_artist,the_artist,the_station_name,the_cd_short_name,'',1,'Main')
+	:(got_beatport_product_start_p3)
+
+
+
+
+
+
+
+
+
+
+
+
+loop_continue_bandcamp
+	ident(loop_pass,'1')	:s(loop_continue_bandcamp_pass1)
+	:(loop_continue_bandcamp_pass2)	
+
+loop_continue_bandcamp_pass1
+	x bing_result_pattern	:s(got_bandcamp_url1)
+	:(loop)
+
+got_bandcamp_url1
+	&anchor = 0
+	the_stuff bing_result_inner_patterns  :s(bandcamp_righton)
+	&anchor = 1
+	:(loop)
+
+bandcamp_righton
+	terminal = 'righton  ' x 
+	terminal = 'rightnext ' the_next_url
+	ident(the_next_url)	:f(loopstate)
+	the_stuff 'href="' break('"') . the_url :f(loop)
+	the_next_url = the_url
+	terminal = 'bandcamp found_url'
+	terminal = the_url
+	:(loop)
+
+loop_continue_bandcamp_pass2
+	got_cd_cover '1'	:s(bandcamp_pass2_skip_image_search)
+	x bandcamp_image_result	:f(bandcamp_pass2_skip_image_search)
+        &anchor = 1
+        the_url '//' = 'https://'
+	the_image_url = add_image('',the_url,'front_cover.png')
+	got_cd_cover = 1
+
+bandcamp_pass2_skip_image_search
+	:(loop)
+
+
+
+
+
+
+
+loop_continue_generasl
+	ident(loop_pass,'1')	:s(loop_continue_general_pass1)
+	:(loop_continue_general_pass2)	
+
+loop_continue_general_pass1
+	x bing_result_pattern	:s(got_general_url1)
+	:(loop)
+
+got_general_url1
+	&anchor = 0
+	the_stuff bing_result_inner_patterns  :s(general_righton)
+	&anchor = 1
+	:(loop)
+
+general_righton
+	terminal = 'general righton  ' x 
+	&anchor = 0
+	the_stuff bing_result_inner_pattern1	:s(beatport_righton)
+	the_stuff bing_result_inner_pattern2	:s(yandex_righton)
+	the_stuff bing_result_inner_pattern3	:s(bandcamp_righton)
+	the_stuff brip3				:s(bandcamp_righton)
+	the_stuff brip4				:s(bandcamp_righton)
+	the_stuff brip5				:s(bandcamp_righton)
+	the_stuff brip6				:s(bandcamp_righton)
+	the_stuff brip7				:s(bandcamp_righton)
+	the_stuff brip8				:s(bandcamp_righton)
+*	the_stuff brip9				:s(discogs_righton)
+	:(loop)
+
+loop_continue_general_pass2
+
+
+
+
+
+
+
+
+loop_continue_yandex
+	ident(loop_pass,'1')	:s(loop_continue_yandex_pass1)
+	:(loop_continue_yandex_pass2)	
+
+loop_continue_yandex_pass1
+	x bing_result_pattern	:s(got_yandex_url1)
+	:(loop)
+
+got_yandex_url1
+	&anchor = 0
+	the_stuff bing_result_inner_patterns  :s(yandex_righton)
+	&anchor = 1
+	:(loop)
+
+yandex_righton
+	ident(the_next_url)	:f(loopstate)
+	the_stuff 'href="' break('"') . the_url :f(loop)
+	the_next_url = the_url
+	terminal = 'yandex found_url'
+	terminal = the_url
+	:(loop)
+
+loop_continue_yandex_pass2
+	got_cd_cover '1'	:s(yandex_pass2_skip_image_search)
+	x bing_image_result	:f(yandex_pass2_skip_image_search)
+        &anchor = 1
+        the_url '//' = 'https://'
+	the_image_url = add_image('',the_url,'front_cover.png')
+	got_cd_cover = 1
+
+yandex_pass2_skip_image_search
+	:(loop)
+
+
+	
+
+
+
+loop_continue_geomagnetic
+	x input_pattern	:s(got_input_pattern)
+
+        got_image_head '1' :(lcg_already_got_head)
+	x image_head_pattern :s(got_image_headl)
+
+lcg_already_got_head
+        got_cd_cover '1' :(lcg_already_got_cd_cover)
+	x imagemain_pattern :s(got_imagemain)
+
+lcg_already_got_cd_cover
+	x url_pattern :s(found_url)
+
+        got_got_tracks '1' :(lcg_already_got_tracks)
+	x track_table_pattern1 :s(got_track_table_start)
+
+lcg_already_got_tracks
+	x more_info_pattern :s(got_more_info_pattern)
+	x more_info_table_pattern :s(got_more_info_table_pattern)
+        got_got_tracks '1' :(lcg_already_got_tracks2)
+	x track_list_pattern :s(got_track_list_pattern)
+
+lcg_already_got_tracks2	
+	l = 'ts' table_state
+	:($l)
+	
+trystate	
+	l = 's' state
+	:($l)
+	
+tsnominal
+	:(trystate)
+	
+tscolon
+	x 's td'  :f(trystate)
+	table_state = 'next_text'
+	:(trystate)
+	
+tsnext_text
+	x 't ' arbno(any(&alphabet))	.  the_more_info_value rpos(0)	:s(tsgotnext_text)
+	x 'e td'	:f(trystate)
+* here we went too far
+	table_state = 'nominal'
+	:(trystate)
+	
+tsgotnext_text	
+	table_state = 'nominal'
+	:(got_more_info_pattern)	
+
+got_image_headl
+	terminal = ' got the image head ' image_head_url
+	the_image_head_url = add_image('',image_head_url,'imagehead.png')
+	got_image_head = 1
+	:(loopstate)
+
+got_imagemain
+	terminal = ' got the image main '
+	the_image_url = add_image('',image_url,'front_cover.png')
+	got_cd_cover = 1
+	:(loopstate)
+	
+found_url
+	ident(the_next_url)	:f(loopstate)
+	the_url '../..' = 'http://www.geomagnetic.tv'
+	the_url '/' = 'http://www.geomagnetic.tv/'
+	the_next_url = the_url
+	terminal = 'found_url'
+	terminal = the_url
+	:(loopstate)
+
+	
+got_more_info_table_pattern
+	table_state = 'colon'
+	:(loop)
+			
+				
+got_input_pattern
+	t[xx_name] = xx_value
+	:(loop)
+	
+got_more_info_pattern
+	pattern = 'normal'
+* ^^^ important because this section is after the collab tracks
+	&anchor = 0
+* cleanup because spaces and nbsp
+ll4	the_more_info_name '&nbsp;' = ' '	:s(ll4)
+ll4b	the_more_info_value '&nbsp;' = ' '	:s(ll4b)
+	the_more_info_name sz rpos(0) = ''
+	the_more_info_value sz rpos(0) = ''
+	&anchor = 1
+	the_more_info_name sz = ''
+	the_more_info_value sz = ''
+	the_more_info_name 'Release Title' = 'Title'
+	the_more_info_name 'Media Format' = 'Format'
+	the_more_info_name 'Catalogue No.' = 'Catalogue'
+	t[the_more_info_name] = the_more_info_value
+	:(loop)
+	
+	
+got_track_list_pattern	
+	state = 'track_list'
+	:(loop)
+	
+	
+got_track_table_start	
+	state = 'track_table'
+	:(loop)
+	
+	
+	
+snormal
+	x collab_tracks_start_pattern	:f(loop)
+	state = 'collab_tracks'
+	:(loop)
+	
+scollab_tracks	
+	x collab_tracks_name_pattern :s(got_collab_name)
+	x collab_tracks_email_pattern :s(got_collab_enail)
+	:(loop)
+	
+	
+strack_list
+	x track_line_pattern	:s(got_track_line)
+	:(loop)
+	
+strack_table
+	x 's TABLE' :f(loop)
+	state = 'track_table2'
+	:(loop)
+
+strack_table2
+	x 's TR' | 's tr'  :s(strack_table2y)
+	x 'e TABLE' :s(loopstate)
+	:(loop)
+	
+strack_table2y	
+	state = 'track_table3'
+	:(loop)
+	
+strack_table3
+	x 's TD' | 's td' :s(strack_table3y)
+	x 'e TABLE' :s(loopstate)
+	:(loop)
+	
+strack_table3y	
+	state = 'track_table4'
+	:(loop)
+				
+strack_table4	
+	x ( track_line_pattern | track_line_pattern_simple1 )	:s(strack_table4_yes)
+	x 
+	x 'e TABLE' :s(loopstate)
+	:(loop)
+
+strack_table4_yes	
+	state = 'track_table2'	
+	x track_line_pattern	:s(got_track_line)
+	x track_line_pattern_simple1 :s(got_track_line_simple1)
+	:(loop)
+	
+
+	
+	
+	state = 'track_table2'
+	:(loop)
+	
+	
+	
+	
+got_collab_name
+	terminal = 'got collab name'
+	&anchor = 0
+	the_artist sz '.' sz  arbno(any(&alphabet)) rpos(0) = ''  
+* ^^^ something .. israel from view-source:http://www.geomagnetic.tv/news/Geocd078/
+	ident(the_artist,'')	:s(huh111)
+	
+    track_artist_code1 = the_artist
+    track_artist_code2 = ''
+    &anchor = 1
+    the_artist arbno(any(not_amp)) . track_artist_code1 sz '&amp;' sz arbno(any(&alphabet)) . track_artist_code2 rpos(0) 
+
+        ident(track_artist_code1)       :s(loop)
+	
+	add_artist(the_artist_code1,track_artist_code1,the_station_name,the_cd_short_name,'',2,'Collaborator')
+        ident(track_artist_code2)       :s(loop)
+	
+	add_artist(the_artist_code2,track_artist_code2,the_station_name,the_cd_short_name,'',3,'Collaborator')
+
+huh111  :(loop)
+
+
+	
+	
+got_collab_email 
+	terminal = 'collab_tracks_name_pattern' x
+	b = 1
+gce_loop
+	gt(b,3)	:s(loop)
+	sr_email_sql = sr_email_sql sr_email_comma 
++	  'insert into sr_emails (email_address,artist_id,artist_seq) '
++          'select lower(' q(the_email_address) '),(select artist_id from sr_artists where artist_code= '
++         q(the_artist) '), ' b ' '
++           'where not exists (select 1 from sr_emails where artist_code = ' q(the_artist) ' and artist_seq = ' b ')'
++           'and  not exists (select 1 from sr_emails where email_address  = lower(' q(email_address) ');'
++	 char(10) 
+         sr_email_comma = char(10)
+	:(gce_loop)		
+				
+						
+										
+
+	
+	
+
+
+got_track_line
+* need to handle and persands
+    temp = the_artist
+    track_artist_code1 = the_artist
+    track_artist_code2 = ''
+    &anchor = 1
+    the_artist arbno(any(not_amp)) . track_artist_code1 sz '&amp;' sz arbno(any(&alphabet)) . track_artist_code2 rpos(0) 
+
+
+    ident(track_artist_code1)       :s(track_no_line_1)
+    add_artist(track_artist_code1,track_artist_code1,the_station_name,the_cd_short_name,the_track_number
++		,1,'Main')
+track_no_line_1
+
+    ident(track_artist_code2)       :s(track_no_line_2)
+    add_artist(track_artist_code2,track_artist_code2,the_station_name,the_cd_short_name,the_track_number
++		,2,'Main')
+
+track_no_line_2
+	:(loop)
+	
+
+	
+		
+			
+				
+					
+got_track_line_simple1
+* need to handle and persands
+    &anchor = 1
+    
+    add_track(the_station_name,the_cd_short_name,the_track_number,the_raw_title,the_song_title)
+    ident(track_artist_code1)       :s(loop)
+	:(loop)
+	
+
+														
+
+			
+					
+
+
+
+done
+	l = 'done_pass_' loop_pass
+	:($l)
+done_pass_1
+	terminal = 'done pass ' loop_pass
+	ident(the_next_url) :f(open_pass_2)
+	the_next_url = u[the_cd_short_name]
+	ident(the_next_url) :f(open_pass_2)
+	
+really_done
+	status = got_image_head got_cd_cover got_tracks got_artists got_artist_tracks
+	terminal = 'status is ' status
+	
+* convert 2s into 1's
+	&anchor = 0
+lllll	status '2' = '1' :s(lllll)
+	&anchor = 1
+	
+	got_image_head '2' = '1'
+	got_cd_cover '2' = '1'
+	got_tracks '2' = '1'
+	got_artists '2' = '1'
+	got_artist_tracks '2' = '1'
+	
+		
+	
+	:(return)
+open_pass_2
+	terminal = 'try to open the next file'
+	this_current_url = the_next_url
+	host(1,"rm 2>/dev/null ' f_simple '2.html")
+	
+	cmd = 'curl -k -sA "Chrome" -L "' to_url(the_next_url) '" -o ' f_simple '2.html'
+	terminal = cmd
+	host(1,cmd)
+	
+	cmd = 'html_to_tokens ' f_simple '2.html >' f_simple '2.tok'
+	terminal = cmd
+
+	
+			host(1,cmd)
+	
+	b = input('next_file',14,'',f_simple '2.tok')	:f(really_done)
+	terminal = 'got second file'
+	the_next_url = ''
+	loop_pass = 2
+	:(loop)	
+
+
+	
+		
+			
+done_pass_2
+	terminal = 'done pass ' loop_pass
+	ident(the_next_url) :s(really_done)
+	terminal = 'done pass ' loop_pass
+	:(really_done)
+*	this_current_url = the_next_url
+*	terminal = 'done pass ' loop_pass
+*	terminal = 'try to open the third file'
+	
+*	host(1,"rm 2>/dev/null g3.html g3.tok")
+	
+*	cmd = 'curl -k -sA  "Chrome" -L "' to_url(the_next_url) '" -o g3.html'
+*	terminal = cmd
+*	host(1,cmd)
+*	
+*	cmd = 'html_to_tokens g3.html >g3.tok'
+*	terminal = cmd
+
+*	
+			host(1,cmd)
+*	
+*	b = input('third_file',14,'','g3.tok')	:f(really_done))
+*	terminal = 'got third file'
+*	the_next_url = ''
+*	loop_pass = 3
+*	:(loop)	
+
+done_pass_3
+	terminal = 'done pass ' loop_pass
+	:(really_done)
+	
+done_scrape_site
+
+
+
+
+	u = table()
+	u['basscd007'] = 'http://geomagnetic.tv/labels/Geo-Basstar/BASSCD007-ChilldrenOfTheBlueRay_v2/'
+
+
+
+	:(done_functions)
+
+endd
+end

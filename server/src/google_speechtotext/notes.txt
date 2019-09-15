@@ -1,0 +1,462 @@
+ 
+sudo apt install ffmpeg 
+sudo apt install sox 
+me .curlrc - add insecure
+
+gsutil     
+https://cloud.google.com/storage/docs/gsutil_install
+mv index.html r
+curl https://sdk.cloud.google.com | bash
+alias curl="curl -k"
+exec -l $SHELL
+gcloud init
+choose a project
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+. ./setup.sh
+ 
+ 
+-* 16k versus 48k - use 41/48 k
+
+    
+# in.mp3 - input mp3
+
+
+ffmpeg -i  in.mp3  f0.flac
+sox -n -r 44100 -c 1 p00.wav trim 0.00 0.01
+# edit the audio andadd ohm
+sox --combine concatenate p00.wav -v 0.91 f0.flac f1.flac
+sox --combine concatenate p00.wav p00.wav -v 0.865 f0.flac f2.flac
+sox --combine concatenate p00.wav p00.wav p00.wav -v 0.94 f0.flac f3.flac
+sox --combine concatenate p00.wav p00.wav p00.wav p00.wav -v 0.781 f0.flac f4.flac
+sox --combine concatenate p00.wav p00.wav p00.wav p00.wav p00.wav -v 0.818 f0.flac f5.flac
+sox --combine concatenate p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav -v 0.82673 f0.flac f6.flac
+sox --combine concatenate p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav -v 0.68273467 f0.flac f7.flac
+sox --combine concatenate p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav -v 0.878963 f0.flac f8.flac
+sox --combine concatenate p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav p00.wav -v 0.6967999 f0.flac f9.flac
+{
+gsutil cp f0.flac gs://songz 
+gsutil cp f1.flac gs://songz 
+gsutil cp f2.flac gs://songz 
+gsutil cp f3.flac gs://songz 
+gsutil cp f4.flac gs://songz 
+gsutil cp f5.flac gs://songz 
+gsutil cp f6.flac gs://songz 
+gsutil cp f7.flac gs://songz 
+gsutil cp f8.flac gs://songz 
+gsutil cp f9.flac gs://songz 
+}
+wait
+
+export d=0
+
+
+
+
+echo  $d
+curl  -k -H "Content-Type: application/json" \
+    -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+    -H "Content-Type: application/json; charset=utf-8" \
+     --data "{  'config': {
+      'encoding':'FLAC',
+      'sampleRateHertz': 44100,
+      'languageCode': 'es-PR',
+      'enableWordTimeOffsets': true,
+      'enableAutomaticPunctuation':true,
+      'model': 'default',
+      'useEnhanced': true
+  },  
+  'audio': {
+      'uri':'gs://songz/f$d.flac'
+  }
+}" "https://speech.googleapis.com/v1p1beta1/speech:longrunningrecognize" | tee s$d.txt
+
+export d=`expr $d + 1`
+
+
+
+
+
+export e=0
+
+
+echo $e
+export n=`grep name s$e.txt | awk '{print $2}'`
+export n=`echo echo $n | bash`       
+curl -k -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+     -H "Content-Type: application/json; charset=utf-8" \
+     "https://speech.googleapis.com/v1/operations/$n" | tee t$e.json
+echo $e
+
+export e=`expr $e + 1`
+
+
+ 
+  
+ sbl jsons_to_srx.sno >in.srx
+../srplayer -t in.mp3
+# note - for 02 it slowed down by a second or so.     
+ 
+	
+
+gsutil rm gs://songz/f0.flac
+gsutil rm gs://songz/f1.flac
+gsutil rm gs://songz/f2.flac
+gsutil rm gs://songz/f3.flac
+gsutil rm gs://songz/f4.flac
+gsutil rm gs://songz/f5.flac
+gsutil rm gs://songz/f6.flac
+gsutil rm gs://songz/f7.flac
+gsutil rm gs://songz/f8.flac
+gsutil rm gs://songz/f9.flac
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lesson2
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvSep 31, 2018vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvSep 31, 2018vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvSep 31, 2018vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvSep 31, 2018
+State - accomplished tries/vinnes13
+ 
+   sudo apt install ffmpeg 
+sudo apt install sox 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+So, you have to uypload the file into a "bucket"
+Then delete the bucket.
+I think I will need to do the file 10 times - each time with an additional padding.
+
+That way - we will be accurate to the 100th of a second, not the tenth of a second.
+
+ Add all the extra things to make it work better 
+ Well, maybe 5 times at first.
+ 
+
+
+data logging - yes
+https://cloud.google.com/speech-to-text/docs/enable-data-logging
+
+enhanced models - maybee model is default
+enableAutomaticPunctuation - yrs
+
+
+different speakers - onlt works in es-ES - which mioght be giid.
+ 
+ 
+ v1p1 has more options
+ 
+https://cloud.google.com/speech-to-text/docs/word-confidence 
+
+ 
+-* figure out how to upload to a bucket
+gsutil     
+https://cloud.google.com/storage/docs/gsutil_install
+mv index.html r
+me .curlrc - add insecure
+curl https://sdk.cloud.google.com | bash
+alias curl="curl -k"
+exec -l $SHELL
+gcloud init
+choose a project
+
+later
+. ~/.bashrc
+gcloud init
+1
+
+gsutil cp localfile gs://songz
+
+-* figure out how to delete from a bucket
+gsutil rm gs://songz/a.flac
+-* figure out data logging
+https://cloud.google.com/speech-to-text/docs/enable-data-logging
+
+-* figure out enhanced 
+-* figure out punctuation 
+-* offset 5 copies with 20 ms  
+!* 16k versus 48k
+
+hib@luke:~/opencvs/SilentRadiance/linux/server/src/google_speechtotext$ sudo apt-get install libavcodec57
+sudo apt-get install libavcodec-extra57
+    
+# in.mp3 - input mp3
+export GOOGLE_APPLICATION_CREDENTIALS=$PWD/private.json
+
+ffmpeg -i  in.mp3  f0.flac
+sox -n -r 44100 -c 1 p00.wav trim 0.00 0.01
+sox --combine concatenate p00.wav f0.flac f1.flac
+sox --combine concatenate p00.wav f1.flac f2.flac
+sox --combine concatenate p00.wav f2.flac f3.flac
+sox --combine concatenate p00.wav f3.flac f4.flac
+sox --combine concatenate p00.wav f4.flac f5.flac
+sox --combine concatenate p00.wav f5.flac f6.flac
+sox --combine concatenate p00.wav f6.flac f7.flac
+sox --combine concatenate p00.wav f7.flac f8.flac
+sox --combine concatenate p00.wav f8.flac f9.flac
+gsutil cp f0.flac gs://songz
+gsutil cp f1.flac gs://songz
+gsutil cp f2.flac gs://songz
+gsutil cp f3.flac gs://songz
+gsutil cp f4.flac gs://songz
+gsutil cp f5.flac gs://songz
+gsutil cp f6.flac gs://songz
+gsutil cp f7.flac gs://songz
+gsutil cp f8.flac gs://songz
+gsutil cp f9.flac gs://songz
+
+export d=0
+
+curl  -k -H "Content-Type: application/json" \
+    -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+    -H "Content-Type: application/json; charset=utf-8" \
+     --data "{  'config': {
+      'encoding':'FLAC',
+      'sampleRateHertz': 44100,
+      'languageCode': 'es-PR',
+      'enableWordTimeOffsets': true,
+      'enableAutomaticPunctuation':true,
+      'model': 'default',
+      'useEnhanced': true
+  },  
+  'audio': {
+      'uri':'gs://songz/f$d.flac'
+  }
+}" "https://speech.googleapis.com/v1p1beta1/speech:longrunningrecognize" | tee s$d.txt
+
+export d=`expr $d + 1`
+
+
+
+
+
+export e=0
+
+
+
+export n=`grep name s$e.txt | awk '{print $2}'`
+export n=`echo echo $n | bash`       
+curl -k -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+     -H "Content-Type: application/json; charset=utf-8" \
+     "https://speech.googleapis.com/v1/operations/$n" | tee t$e.json
+
+export e=`expr $e + 1`
+
+ 
+ 
+	
+	 
+	  
+	   
+	     
+ lesson 1
+ vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+#need singalong.json to be set
+# obviously, we cant add the redentials here.
+# from https://cloud.google.com/speech-to-text/docs/quickstart-protocol
+export GOOGLE_APPLICATION_CREDENTIALS=$PWD/singalong.json
+export GOOGLE_APPLICATION_CREDENTIALS=$PWD/private.json
+
+ wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-217.0.0-linux-x86_64.tar.gz
+tar -xzvf google-cloud-sdk-217.0.0-linux-x86_64.tar.gz
+./google-cloud-sdk/install.sh
+./google-cloud-sdk/bin/gcloud init
+source ~/.bashrc
+
+
+
+
+
+CURL fix:
+from https://developer.ibm.com/answers/questions/438703/curl-60-ssl-certificate-problem-unable-to-get-loca/
+cd /usr/lib/ssl/certs
+sudo su 
+wget https://curl.haxx.se/ca/cacert.pem
+ c_rehash /usr/lib/ssl/certs
+ 
+
+
+
+Note - {
+  "error": {
+    "code": 400,
+    "message": "Inline audio exceeds duration limit. Please use a GCS URI.",
+    "status": "INVALID_ARGUMENT"
+  }
+}
+
+so use gdrive
+https://olivermarshall.net/how-to-upload-a-file-to-google-drive-from-the-command-line/
+wget https://docs.google.com/uc?id=0B3X9GlR6EmbnWksyTEtCM0VfaFE&export=download
+mv 'uc'* gdrive
+ chmod 755 gdrive
+./gdrive list
+asks for auth
+
+
+
+had to create a bucket - songz
+
+
+
+need to recode mp3 into flac or wav 
+
+    'encoding': 'LINEAR16',
+    'sampleRateHertz': 16000,
+    'languageCode': 'en-US'
+    
+ffmpeg -i  2018_09_19_21_14_22.mp3 -sample_fmt s16 -ar 16000 a.flac
+ffmpeg -i  2018_09_19_21_14_22.mp3  2018_09_19_21_14_22.flac
+./gdrive upload 2018_09_19_21_14_22.flac
+
+#base64 2018_09_19_21_14_22.flac -w 0 >2018_09_19_21_14_22.64
+
+scp -P 26 2018_09_19_21_14_22.flac killercool.com/w
+
+curl  -k -H "Content-Type: application/json" \
+    -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+    -H "Content-Type: application/json; charset=utf-8" \
+     --data "{  'config': {
+      'encoding':'FLAC',
+      'sampleRateHertz': 16000,
+      'languageCode': 'en-US',
+      'enableWordTimeOffsets': true
+  },
+  'audio': {
+      'uri':'gs://cloud-samples-tests/speech/brooklyn.flac'
+  }
+}" "https://speech.googleapis.com/v1/speech:longrunningrecognize" 
+
+
+
+curl -k -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+     -H "Content-Type: application/json; charset=utf-8" \
+     "https://speech.googleapis.com/v1/operations/575559878838951212"
+
+
+
+curl  -k -H "Content-Type: application/json" \
+    -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+    -H "Content-Type: application/json; charset=utf-8" \
+     --data "{  'config': {
+      'encoding':'FLAC',
+      'sampleRateHertz': 16000,
+      'languageCode': 'es-PR',
+      'enableWordTimeOffsets': true
+  },
+  'audio': {
+      'uri':'gs://songz/a.flac'
+  }
+}" "https://speech.googleapis.com/v1/speech:longrunningrecognize" 
+
+
+
+curl  -k -H "Content-Type: application/json" \
+    -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+    -H "Content-Type: application/json; charset=utf-8" \
+     --data "{  'config': {
+      'encoding':'FLAC',
+      'sampleRateHertz':44100,
+      'languageCode': 'es-PR',
+      'enableWordTimeOffsets': true
+  },
+  'audio': {
+      'uri':'gs://songz/2018_09_19_21_14_22.flac'
+  }
+}" "https://speech.googleapis.com/v1/speech:longrunningrecognize" 
+
+
+curl -k -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+     -H "Content-Type: application/json; charset=utf-8" \
+     "https://speech.googleapis.com/v1/operations/8592903288680508423" | tee s2.json
+
+
+s1.json (16000 hz ) went faster by far.
+but s2.json worked
+
+
+
+
+
+
+
+
+
+
+
+curl  -H "Content-Type: application/json" \
+    -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+    -H "Content-Type: application/json; charset=utf-8" \
+     --data "{
+  'config': {
+    'languageCode': 'es-PR',
+    'enableWordTimeOffsets': true
+  },
+  'audio': {
+    'uri': '
+  }
+}" "https://speech.googleapis.com/v1/speech:longrunningrecognize" -k
+
+        https://speech.googleapis.com/v1/speech:longrunningrecognize 
+
+	      
+
+ base64 source_audio_file -w 0 > dest_audio_file
+
+
+{
+  "name": "7612202767953098924"
+}
+
+
+
+curl -H "Authorization: Bearer "$(gcloud auth application-default print-access-token) \
+     -H "Content-Type: application/json; charset=utf-8"
+     "https://speech.googleapis.com/v1/operations/your-operation-name"

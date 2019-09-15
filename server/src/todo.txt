@@ -1,0 +1,8 @@
+Select three channels
+Record button.
+Playtback button
+
+External commands - color, rainbow, identify, 
+
+
+cred system

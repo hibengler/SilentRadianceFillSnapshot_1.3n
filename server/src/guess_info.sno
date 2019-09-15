@@ -1,0 +1,573 @@
+
+* $Revision: 1.16 $
+* ./dubstepsf019-Bo_Biz_-_Legendary_EP/04_-_Bo_Biz_-_Gangster_Wub.wav	 ->
+* dubstepsf019,04|Bo Biz|Ganster Wub|Legendary EP|Dubstep SF|04
+	
+* geomagnetic try - after finessed
+
+
+* Dennis/*/*/ - dennis folders are not organized, but most are mp3's
+* *** Tag Information for ....
+* === TIT2 (Title/songname/content description): Interview # 1A
+* === TPE1 (Lead performer(s)/Soloist(s)): Exciter
+* === TALB (Album/Movie/Show title): Heavy Metal Maniac
+* === TYER (Year): 1983
+* === TRCK (Track number/Position in set): 12/14
+* === COMM (Comments): ()[eng]: 
+* === TXXX (User defined text information): (PZTagEditor Info): This tag done with PZ TagEditor at 31.03.2007 23:03:10. Version 5.0.603.21
+* === TCON (Content type): Speed Metal
+* *** mp3 info
+* MPEG1/layer III
+* Bitrate: 320KBps
+* Frequency: 44KHz
+
+* - kim and hib - both geomagnetic 'style.
+
+	&anchor = 0
+	no_slash = &alphabet
+	no_slash '/' = ''
+	no_slash_or_dash = no_slash
+	no_slash_or_dash '-' = ''
+
+	number = any('0123456789')
+
+* geomagnetic is pretty good this way	
+	song_section1 = break('-') . track_number '-' break('-') . song_primary_artist '-'
++               span(no_slash) . song_name rpos(0)
+
+	song_section2 = break('-') . track_number '-' '' . song_primary_artist 
++               span(no_slash_or_dash) . song_name rpos(0)
+
+	song_section3 = span('0123456789') . track_number span(' 	_') '' . song_primary_artist
++               span(no_slash_or_dash) . song_name rpos(0)
+
+	song_section_getmedone = ( span('0123456789') | '' ) . track_number ( span('        _') | '' ) '' . song_primary_artist
++		( span(&alphabet) | '' ) . song_name rpos(0)
+
+	song_section_getnodone = '' . track_number '' . song_primary_artist
++		( span(&alphabet) | '' ) . song_name rpos(0)
+
+	song_sections = ( song_section1 | song_section2 | song_section3 )
+
+* note 01 - something doesnt work
+
+	geo1a = break('-') . label_cd_id '-' 
++		break('-') . cd_primary_artist '-' break('/')  . cd_or_ep_name '/' 
++		( 'CD' break('/') ) . cd_number '/'
+
+	geo1ag = break('-') . label_cd_id '-' 
++		break('-') . cd_primary_artist '-' break('/')  . cd_or_ep_name '/' 
++		( 'CD' break('/') ) . cd_number '/'
+
+	geo1b = break('-') . label_cd_id '-' '' . cd_number
++		break('-') . cd_primary_artist '-' break('/')  . cd_or_ep_name '/' 
+
+
+	geo1c = break('-') . label_cd_id '-' 
++		'' . cd_primary_artist  break('/')  . cd_or_ep_name '/' 
++		( 'CD' break('/') ) . cd_number '/'
+
+	geo1d = break('-') . label_cd_id '-' '' . cd_number
++		'' . cd_primary_artist break('/')  . cd_or_ep_name '/' 
+
+
+	
+	highalphabet = &alphabet
+	highalphabet len(30) . the_whitespace
+	highalphabet len(127) = ''
+
+	
+	
+	
+	geo1e = break('/') '/' ( geo1b | geo1a | geo1d | geo1c )
+	geo1f = break('/') '/' ( geo1e )
+	
+	geo1_no_section = geo1f | geo1e | geo1b | geo1a | geo1d | geo1c
+
+* expect get_me_done is filled in to test normal or get_me_done	
+	geo1 = geo1_no_section song_sections '' . get_me_done
+	
+	geo1_get_me_done = geo1_no_section song_section_getmedone
+	geo1_get_no_done = geo1_no_section song_section_getnodone
+
+	uors = '_' | ' '
+	
+	
+	dayn = ( 'd' | 'D' ) number
+	setn = ( 's' | 'S' ) number
+	trackn = ( 't' | 'T' ) ( ( number number ) | ( number ) )
+	maybee_dot_or_space = '.' | ' ' | ''
+	gd_trackinfo1 = dayn maybee_dot_or_space setn maybee_dot_or_space trackn
+	gd_trackinfo2 = dayn maybee_dot_or_space trackn
+	gd_trackinfo3 = setn maybee_dot_or_space trackn
+	gd_trackinfo4 = trackn
+	gd_trackinfo = gd_trackinfo1 | gd_trackinfo2 | gd_trackinfo3 | gd_trackinfo4
+		
+	
+	
+		
+	define('c(x)a,b,c,d,e')
+        DEFINE('lower(s)')
+        UP_LO  =  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+        LO_UP  =  'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'
+	
+	
+	:(functions)
+	
+llk
+	:(ll)
+	
+	
+	
+done_functions
+
+	&anchor = 1
+	line = input	:f(endd)
+	line2 = line
+	line2 './' = ''
+
+*	terminal = 'line ' line
+*	terminal = 'line 2 ( no ./) ' line2
+	
+* get rid of higher than 127 characters	
+	&anchor = 0	
+ll00	line2 any(the_whitespace) = ' '	:s(ll00)
+ll	line2 any(highalphabet) . kk = ''	:s(llk)
+	&anchor = 1
+
+	line2 'kim/' = '' :s(geo_and_standard_mode)
+	line2 'Dennis/' = '' :s(dennis_mode)
+	line2 'gd' break('/') '/' = ''	:s(gd_mode)
+	line2 'greatful_dead' break('/') '/' = ''	:s(gd_mode)
+	
+geo_and_standard_mode	
+	orig_line2 = line2
+*	terminal = 'geo_mode'
+	line2 geo1	:s(go_forward_geo)
+*	terminal = 'geo_mode_2'
+	
+lrn_folder
+	line2 break('/') . the_remove_dir '/' = ''		:f(huh)
+*	terminal = 'try ' line2
+	line2 geo1	:s(go_forward_geo)
+	:(lrn_folder)
+	
+* well, we will try the getmedone
+	line2 = orig_line
+        something = ''
+	line2 geo1_get_me_done	:s(somethin)
+	line2 geo1_get_no_done  :s(nothing_so_far)
+
+somethin	
+	something = 'y'
+nothing_so_far
+	get_rest_tag_info()	:f(utoh)
+	
+do_some_of_it			
+*	terminal = 'not a perfect geo'
+	output = c(label_cd_id) ',' c(track_number) '|' c(song_primary_artist) '|' c(song_name) '||' c(cd_or_ep_name) '|' 
++             	c(marketing_label) '|' c(track_number) '|' incase_stuff '|' the_year '|' the_genre '|||'
+	:(endd)	
+
+* well, we got some info, right?		
+utoh
+	something 'y'  :f(nothin)	
+	:(do_some_of_it)
+	
+	
+* geo mode doesnt use tags	
+	
+go_forward_geo			
+	&anchor = 1
+	label_cd_id = lower(label_cd_id)
+	
+	marketing_label = label_cd_id
+	label_cd_id span('abcdefghijklmnopqrstuvwxyz') . marketing_label
+	
+	whatever = span(&alphabet) | ''
+	
+
+
+	
+	
+	
+	marketing_label ( 'ascend' whatever ) = 'Ascending Records' :s(good_marketing)
+	marketing_label ( 'bass' whatever ) = 'Bass Star Records' :s(good_marketing)
+	marketing_label ( 'digi' whatever ) = 'Digital Drugs Coalition' :s(good_marketing)
+	marketing_label ( 'dubstep' whatever ) = 'Dubstep SF' :s(good_marketing)
+	marketing_label ( 'edm' whatever ) = 'EDM Records' :s(good_marketing)
+	marketing_label ( 'frsh' whatever ) = 'Fresh Frequencies' :s(good_marketing)
+	marketing_label ( 'geo' whatever ) = 'GeoMagnetic Records' :s(good_marketing)
+	marketing_label ( 'goa' whatever ) = 'Goa Records' :s(good_marketing)
+	marketing_label ( 'hit' whatever ) = 'HiTrip Records' :s(good_marketing)
+	marketing_label ( 'ohm' whatever ) = 'Ohn Ganesh Pro' :s(good_marketing)
+	marketing_label ( 'pao' whatever ) = 'Parabolic Music' :s(good_marketing)
+	marketing_label ( 'pwr' whatever ) = 'Powerhouse Records' :s(good_marketing)
+	marketing_label ( 'spit' whatever ) = 'SpiralTrax Records' :s(good_marketing)
+	marketing_label ( 'lippwfm' whatever ) = 'Lipp International w Fame Music' :s(good_marketing)
+	marketing_label ( 'killer' whatever ) = 'Killer Cool East' :s(good_marketing)
+	marketing_label ( 'moby' whatever ) = 'Moby' :s(good_marketing)
+	marketing_label ( 'mvm' whatever ) = 'Mountain Valley Music' :s(good_marketing)
+	marketing_label ( 'pricd' whatever ) = 'Prime Records' :s(good_marketing)
+	marketing_label ( 'pdj' whatever ) = 'Prodi J Music' :s(good_marketing)
+	marketing_label ( 'prcd' whatever ) = 'Prime Records' :s(good_marketing)
+	
+	
+good_marketing
+  	
+	
+	&anchor = 0
+	song_name '.wav' rpos(0) = ''
+	song_name '.mp3' rpos(0) = ''
+	song_name '.MP3' rpos(0) = ''
+	song_name '.flac' rpos(0) = ''
+	song_name '.aac' rpos(0) = ''
+	song_name '.ogg' rpos(0) = ''
+	song_name '.shnf' rpos(0) = ''
+	song_name '.m4a' rpos(0) = ''
+	&anchor = 1
+	
+
+
+
+* label_cd_id,track_number - indentifier
+* then song_artist
+* song name
+* blank
+* CD or EP name
+* marketing label
+* track
+* need cd number - need new field ???
+
+	ident(song_primary_artist,'') :f(gotartist)
+	song_primary_artist = cd_primary_artist
+gotartist
+	
+* originally this wasent here - but it shoud be - hib 2019 - so might change it back for geo scanning?	
+	get_rest_tag_info()
+	
+	
+	output = c(label_cd_id) ',' c(track_number) '|' c(song_primary_artist) '|' c(song_name) '||' c(cd_or_ep_name) '|' 
++             	c(marketing_label) '|' c(track_number) '||||||'
+* add title,year,genre and two more extras
+	:(endd)
+
+
+
+
+
+
+
+
+
+
+
+* dennis mode
+dennis_mode
+	digit = any('0123456789')
+	year = any('12') any ('90') digit digit
+
+
+
+* dennis mode
+        digit = any('0123456789')
+        year = any('12') any ('90') digit digit    
+
+
+
+
+        &anchor = 0
+
+
+        line2 ( ' - ' | '- ' | ' -' | '-' | ' ')  ( 'Discography' | 'discography' | 'DISCOGRAPHY' ) break('/') '/' = '/'
+	line2 ( ' - ' | '- ' | ' ' | '') '[MP3JUICES.COM]' = ''
+
+        the_year = ''
+        line2 ( '/ ' | '/' ) year . the_year ( ' -' | '-' | '/ ' | '/' ) = '/'   :s(dennis_got_year)
+        line2 ( '- ' | '-' | ' ' ) year . the_year ( '/ ' | '/' ) = '/' :s(dennis_got_year) 
+        line2 ( '- ' | '-' | ' ' ) year . the_year ( ' -' | '-' ) = '' :s(dennis_got_year)
+        line2 ( '[' ) year . the_year ( ']' ) = '' :s(dennis_got_year)
+dennis_got_year
+
+	&anchor = 1
+
+	line2 break('/') . incase_line1 '/' break('/') . incase_line2 '/' break('/') . incase_line3  '/' arbno(any(&alphabet)) . incase_line4 rpos(0) :s(rightond)
+	
+	line2 break('/') . incase_line1 '/' break('/') . incase_line2 '/' arbno(any(&alphabet)) . incase_line4 '' . incase_line3 rpos(0) :s(rightond)
+
+	line2 break('/') . incase_line1 '' . incase_line2 '' . incase_line3 '/' arbno(any(&alphabet)) . incase_line4 rpos(0) :s(rightond)
+
+rightond
+
+	&anchor = 0
+	incase_line4 '.wav' rpos(0) = ''
+	incase_line4 '.mp3' rpos(0) = ''
+	incase_line4 '.MP3' rpos(0) = ''
+	incase_line4 '.flac' rpos(0) = ''
+	incase_line4 '.aac' rpos(0) = ''
+	incase_line4 '.ogg' rpos(0) = ''
+	incase_line4 '.shnf' rpos(0) = ''
+	incase_line4 '.m4v' rpos(0) = ''
+	&anchor = 1
+
+	incase_stuff = c(incase_line1) '\n' c(incase_line2) '\n' c(incase_line3) '\n' c(incase_line4)
+	ident(incase_line3,'') :f(dennis_s32)
+	incase_stuff = c(incase_line1) '\n' c(incase_line2) '\n' c(incase_line4)
+dennis_s32	
+	ident(incase_line2,'') :f(dennis_s33)
+	incase_stuff = c(incase_line1) '\n' c(incase_line4)
+dennis_s33
+
+	get_rest_tag_info()
+		
+
+
+	output = c(label_cd_id) ',' c(track_number) '|' c(song_primary_artist) '|' c(song_name) '||' c(cd_or_ep_name) '|' 
++             	c(marketing_label) '|' c(track_number) '|' incase_stuff '|' the_year '|' the_genre '|||'
+	:(endd)
+
+
+
+
+
+
+
+
+* greatful dead 
+gd_mode
+
+	line2 ( 'gd' | 'Gd' | 'GD' ) break('.') . the_date ( '.' | '' ) break('/') . incase_line1  '/' 
++		arbno(any(&alphabet)) . incase_line4 rpos(0)  :f(gd_try_tag)
+	the_date ( number number number number ) . the_year :s(gd_skip2year)
+	the_date ( number number ) . the_year	:f(gd_skip2year)
+	the_date = '19' the_date
+gd_skip2year
+	song_primary_artist = 'Greatful Dead'
+	&anchor = 0
+gdl0	incase_line1 '.' span('0123456789') '.' = '.' :s(gdl0)
+	incase_line1 '.flac16' rpos(0) = ''
+	incase_line1 '.flac1644' rpos(0) = ''
+	incase_line1 '.flac24' rpos(0) = ''
+	incase_line1 '.flacf' rpos(0) = ''
+	incase_line1 '.shnf' rpos(0) = ''
+gdl1	incase_line1 '.' = ' ' :s(gdl1)
+	&anchor = 1
+	cd_or_ep_name = the_date ' ' incase_line1
+	
+	&anchor = 0
+	incase_line4 '.wav' rpos(0) = ''
+	incase_line4 '.mp3' rpos(0) = ''
+	incase_line4 '.MP3' rpos(0) = ''
+	incase_line4 '.flac' rpos(0) = ''
+	incase_line4 '.flac16' rpos(0) = ''
+	incase_line4 '.flac1644' rpos(0) = ''
+	incase_line4 '.flac24' rpos(0) = ''
+	incase_line4 '.aac' rpos(0) = ''
+	incase_line4 '.ogg' rpos(0) = ''
+	incase_line4 '.shnf' rpos(0) = ''
+	incase_line4 '.m4v' rpos(0) = ''
+	terminal = 'il4 ' incase_line4
+	incase_line4 gd_trackinfo . track_number arbno(any(&alphabet)) . song_name rpos(0)
+	cd2.t12
+	
+gdl2	track_number '.' = '' :s(gdl2)
+gdl3	track_number ' ' = '' :s(gdl3)
+	terminal = 'tn ' track_number
+	terminal = 'tn ' track_number
+	terminal = 'tn ' track_number
+	
+	&anchor = 1
+	
+	track_number = lower(track_number)
+	gd_track_number = track_number
+	marketing_label = 'The Live Tapes'
+	incase_stuff = ''	
+
+gd_try_tag
+	get_rest_tag_info()
+	
+	ident(gd_track_number,'') :s(gd_use_meta_track)
+	track_number = gd_track_number
+gd_use_meta_track
+
+	
+	
+
+	output = c(label_cd_id) ',' c(track_number) '|' c(song_primary_artist) '|' c(song_name) '||' c(cd_or_ep_name) '|' 
++             	c(marketing_label) '|' c(track_number) '|' incase_stuff '|' the_year '|' the_genre '|||'
+	:(endd)
+
+
+
+functions
+*	define('c(x)a,b,c,d,e')
+	:(c_end)
+c	a = &anchor
+	&anchor = 1
+cl1	x uors = ''	:s(cl1)
+	&anchor = 0
+cl2	x uors rpos(0) = '' :s(cl2)
+cl3	x '_' = ' ' :s(cl3)
+cl4	x '  ' = ' ' :s(cl4)
+	&anchor = a
+	c = x
+	:(return)
+c_end
+
+
+
+*   lower
+*   make a string lower case
+                                                :(UPLO_END)
+lower    lower   =  REPLACE(S, UP_LO, LO_UP)      :(RETURN)
+UPLO_END
+
+
+
+* changes the global incase_stuff
+	define('get_rest_tag_info()') :(get_rest_tag_info_done)
+get_rest_tag_info
+	got_something_tag = 0
+dennis_loop
+	x	= input	:f(dennis_end)
+dll00	x any(the_whitespace) = ' '	:s(dll00)
+dll	x any(highalphabet) . kk = ''	:s(dll)
+	x '=== TIT2 (' break(':') ': ' span(&alphabet) . song_name    :s(dennis_ok)
+	x '=== TT2 (' break(':') ': ' span(&alphabet) . song_name    :s(dennis_ok)
+	x '=== TP1 (' break(':') ': ' span(&alphabet) . song_primary_artist    :s(dennis_ok)
+	x '=== TPE1 (' break(':') ': ' span(&alphabet) . song_primary_artist    :s(dennis_ok)
+	x '=== TALB (' break(':') ': ' span(&alphabet) . cd_or_ep_name    :s(dennis_ok)
+	x '=== TAL (' break(':') ': ' span(&alphabet) . cd_or_ep_name    :s(dennis_ok)
+	x '=== TYER (' break(':') ': ' span(&alphabet) . the_year    :s(dennis_ok)
+	x '=== TYE (' break(':') ': ' span(&alphabet) . the_year    :s(dennis_ok)
+	x '=== TRCK (' break(':') ': ' span(&alphabet) . track_number   :s(dennis_ok_track)
+	x '=== TRK (' break(':') ': ' span(&alphabet) . track_number   :s(dennis_ok_track)
+	x '=== TCON (' break(':') ': ' span(&alphabet) . the_genre    :s(dennis_ok)
+	x '=== TCO (' break(':') ': ' span(&alphabet) . the_genre    :s(dennis_ok)
+* ^^^ above is from id3info - but what if it is gettags
+	x 'album '  span(&alphabet) . cd_or_ep_name	:s(dennis_ok)
+	x 'artist ' span(&alphabet) . song_primary_artist	:s(dennis_ok)
+	x 'title ' arbno(any(&alphabet)) . song_name ( '\>' | '' ) rpos(0)		:s(dennis_ok)
+	x 'tracknumber '  span(&alphabet) . track_number   :s(dennis_ok_track)
+	
+* I ran chkingo in dennis mode and found this
+* I also found tha chkingo and gettags are installed everywhere	
+	x 'TIT2 ' span(&alphabet) . song_name    :s(dennis_ok)
+	x 'TT2 '  span(&alphabet) . song_name    :s(dennis_ok)
+	x 'TP1 '  span(&alphabet) . song_primary_artist    :s(dennis_ok)
+	x 'TPE1 ' span(&alphabet) . song_primary_artist    :s(dennis_ok)
+	x 'TALB ' span(&alphabet) . cd_or_ep_name    :s(dennis_ok)
+	x 'TAL '  span(&alphabet) . cd_or_ep_name    :s(dennis_ok)
+	x 'TYER ' span(&alphabet) . the_year    :s(dennis_ok)
+	x 'TYE '  span(&alphabet) . the_year    :s(dennis_ok)
+	x 'TRCK ' span(&alphabet) . track_number   :s(dennis_ok_track)
+	x 'TRK '  span(&alphabet) . track_number   :s(dennis_ok_track)
+	x 'TCON ' span(&alphabet) . the_genre    :s(dennis_ok)
+	x 'TCO  ' span(&alphabet) . the_genre    :s(dennis_ok)
+	
+	:(dennis_loop)
+dennis_ok_track
+	&anchor = 0
+	track_number '/' span('01234567890') rpos(0) = ''
+	&anchor = 1
+dennis_ok
+	incase_stuff = ''
+	got_something_tag = got_something_tag + 1
+	:(dennis_loop)
+
+dennis_end
+
+
+	ident(label_cd_id,'') :f(got_label_id_cd_dennis)
+	input('urandom',14,1000,'/dev/urandom')
+	m1 = urandom
+*	terminal = 'urandom ' m1
+	o1 = ''
+	i1 = ord(substr(m1,1,1))
+	m1 any(&alphabet) = ''
+	i1 = remdr(i1,26) + 97
+	o1 = o1 char(i1)
+	i1 = ord(substr(m1,1,1))
+	m1 any(&alphabet) = ''
+	i1 = remdr(i1,26) + 97
+	o1 = o1 char(i1)
+	i1 = ord(substr(m1,1,1))
+	m1 any(&alphabet) = ''
+	i1 = remdr(i1,26) + 97
+	o1 = o1 char(i1)
+	i1 = ord(substr(m1,1,1))
+	m1 any(&alphabet) = ''
+	i1 = remdr(i1,26) + 97
+	o1 = o1 char(i1)
+	i1 = ord(substr(m1,1,1))
+	m1 any(&alphabet) = ''
+	i1 = remdr(i1,26) + 97
+	o1 = o1 char(i1)
+	label_cd_id = 'gues' o1	
+got_label_id_cd_dennis
+	terminal = 'got_something_tag = ' got_something_tag
+	eq(got_something_tag,0)   :s(freturn)
+	:(return)	
+get_rest_tag_info_done
+
+
+
+	:(done_functions)
+
+
+
+
+
+
+
+
+nothin
+	terminal = 'nothin'
+	
+	
+endd
+end
+*
+* $Log: guess_info.sno,v $
+* Revision 1.16  2019/09/09 02:18:25  hib
+* Added Prodi J music
+*
+* Revision 1.15  2019/09/01 00:25:11  hib
+* fix for guess info
+*
+* Revision 1.14  2019/06/01 22:05:00  hib
+* Added mountain valley music
+*
+* Revision 1.13  2019/05/21 02:26:10  hib
+* much better
+*
+* Revision 1.12  2019/05/21 02:07:59  hib
+* Cleaned this up better via moby free, but also for kim
+* But it is a bit TOO loose -
+* Need to make it fail if it cant read, cause the tags are still better?
+*
+* Revision 1.11  2019/05/18 00:07:39  hib
+* another fix
+*
+* Revision 1.10  2019/05/18 00:04:43  hib
+* fixed minor
+*
+* Revision 1.9  2019/05/17 23:23:36  hib
+* Adding support for a new song provider: Kim. Also made it print out the server name so we don't get confused.
+*
+* Revision 1.8  2018/12/12 14:59:24  hib
+* better
+*
+* Revision 1.7  2018/12/12 14:43:17  hib
+* wip
+*
+* Revision 1.6  2018/03/29 00:48:13  hib
+* Getting the greatful dead tapes set up
+*
+* Revision 1.5  2018/02/01 20:48:20  hib
+* Got dennis's songs to work.
+*
+* Revision 1.3  2018/01/22 12:08:12  hib
+* fixed goa records goa problem. Fixed above 127 problem
+*
+*

@@ -1,0 +1,1098 @@
+/*
+Silent Radiance wifi broadcast for digital silent disco.
+Copyright (C) 2017-2019 Hibbard M. Engler
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License   
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
+/*
+$Revision: 1.111 $
+*/
+
+// WORLD_INTERNATIONAL off
+// chase or dave taylor whos that band
+#ifdef LINUX_CLIENT
+char *default_en_display_set_order = "0 5";
+char *default_es_display_set_order = "0 4 3 6";
+char *demo_display_set_order = "0 3 5 8 6";  // purple string,worm, lyrice, words
+#else
+char *default_en_display_set_order = "0 5";
+char *default_es_display_set_order = "0 4 3 6";
+char *demo_display_set_order = "0 5";
+#endif
+// WORLD_INTERNATIONAL on
+
+/* display set           button number on main menu
+ 0 = default 			n/a
+ 1 = justin2 			2
+ 2 = main_menu  BECAUSE		n/a
+ 3 = purple_string 		3
+ 4 = network_cube 		3
+ 5 = backward_room 		4
+ 6 = words (disco info)		5
+ 7 = top_menu - for now. 	n/a
+ 8 = visual voice 	        7
+ 9 larry_harvey_hater_robots   8
+ 10 mathias1			9
+ 11 staff			10
+ -1 vr                          10
+ 11 window_shop			11
+ 12 buy_it_now			12
+ 
+Note - the main menu controls the display set.  
+*/
+
+#include <string.h>
+#include <stdio.h>
+
+#include "glue.h"
+#include "display_set.h"
+#include "display_main.h"
+#include "preferences.h"
+
+#include "default.h"
+#include "justin2.h"
+#include "top_menu.h"
+#include "purple_string.h"
+#include "main_menu.h"
+#include "network_cube.h"
+#include "backward_worm.h"
+#include "mathias1.h"
+//#include "srikant1.h"
+#include "words.h"
+#include "visual_voice.h"
+
+//#include "raylib.h"
+#include "not_rl.h"
+
+extern not_rl_Camera not_rl_vr_camera;
+//#ifdef PLATFORM_SILENT_RADIANCE
+extern not_rl_VrStereoConfig not_rl_vrConfig;
+not_rl_VrDeviceInfo srhmd;
+//#endif
+
+int whichEye;//not used
+
+int menu_up;
+
+int heavy_metal_flag = 0; // if set, some visualizers act differently - red to yellow hues.
+// and the background is also affected
+// also affects some of the visualizers
+int hib_flag = 0; // if set, some visualizers act differently - deep purple
+// these are set by some channels.
+    
+int registered_display_set_count=0;
+struct display_set registered_display_sets[40];
+int exclusive_display_stack=0;
+
+int display_stack_pointer=0;
+int display_set_stack[40];
+static void   set_base_viewport(int,int,int,int,int);
+
+extern int make_demo_mode;
+
+
+
+not_rl_Camera not_rl_vr_camera;  
+
+
+int last_width=0; /* used to determine if we have to re-do the setupGraphics stuff
+                            Since init and setupGraphics are different, and we do not have an init call,
+			    This is here, because android will call surfacechanged - when it really hasent
+			    if the screen goes to the background */
+int last_height=0;
+int last_screen_orientation=1; // 1 pointing up, 3 upside down
+                               // 2 ??? 4 ???
+int last_screen_layout = 0;
+int last_draw_mode=0; // 0 - normal, 1 - VR
+int ran_setup_graphics_once_before=0; /* this flag handles the fact that we do not have an init fucntion.
+   If ran_setup_graphics_once_before is set, we can skip some of the setup - 
+   like program creation, and just do the
+   width/height specific alterations. This is fairly new, and visualizers before 9/25/2016 probably need to 
+   have their init code redone slightly. 
+   
+   Now android will sometimes dump the gl setup and we erdo it
+   so ran_setup_Graphics_once_before might go back to 0
+   */
+
+
+
+extern const display_set default_display_set;
+extern const display_set justin2_display_set;
+extern const display_set main_menu_display_set;
+extern const display_set purple_string_display_set;
+extern const display_set network_cube_display_set;
+extern const display_set backward_worm_display_set;
+extern const display_set words_display_set;
+extern const display_set top_menu_display_set;
+extern const display_set jason_display_set;
+extern const display_set visual_voice_display_set;
+extern const display_set larry_harvey_display_set;
+extern const display_set ivonne1_display_set;
+extern const display_set luis1_display_set;
+extern const display_set dennis1_display_set;
+extern const display_set mathias1_display_set;
+//extern const display_set srikant1_display_set;
+extern const display_set buy_it_now_display_set;
+extern const display_set window_shop_display_set;
+extern const display_set staff_display_set;
+#ifdef LINUX_CLIENT
+extern const display_set projectm_display_set;
+#endif
+
+/* used by setup_screen_for_internal_vr and restore_screen_from_internal_vr */
+static int save_or_ww;
+static int save_ly_ww;
+static float save_xdpi_ww;
+static float save_ydpi_ww;
+
+extern int splash_frame_count;
+
+
+
+/* use by set_base_viewport */
+
+int base_viewport_x1;
+int base_viewport_y1;
+int base_viewport_w;
+int base_viewport_h;
+int base_viewport_eye;
+
+extern void not_rl_PretendNoVr(void);
+extern void not_rl_StopPretendingNoVr(void);
+extern void tell_apple_to_present_render_buffer(int value);
+extern void not_rl_ClearBackgroundForReals(not_rl_Color color);
+
+/* ---------   
+    nonop
+ ----------*/
+/* Non operation -0 used as stub for vector calls that do nothing
+!* move to helper 
+*/
+void nonop() {}
+
+
+
+/*----------------------------
+set_display_set_order_based_on_string
+------------------------------*/
+/* look at the saved string and set the display set order based on it.
+Used to load the preferences of the visualizers on startup.
+*/
+void set_display_set_order_based_on_string(char *display_set_order) 
+{
+	
+display_stack_pointer=0;
+char order[2000];
+strncpy(order,display_set_order,1999);
+order[1999]='\0';
+char *ptr=order;
+char *sptr=order;
+char *item;
+//logit("display set order %s",display_set_order);
+while ((item=strtok_r(sptr," ",&ptr))!=NULL) {
+//  logit("  %s",item);
+  int iitem = atoi(item);
+  if (registered_display_set_count>iitem) { // in case weird db
+    push_display_set(atoi(item));
+    }
+  
+  sptr=NULL;
+  }
+}
+
+
+
+
+
+/*----------------------------------------------
+set_display_set_order_to_preferences
+------------------------------------------*/
+/* Read preferences and set display set order based on that-- unless in demo mode.
+Demo mode has preset preferences for display set order 
+*/
+void set_display_set_order_to_preferences() 
+{
+char *def_display_set_order;
+if (strcmp(WORLD_LANGUAGE_CODE,"es")==0) {
+  def_display_set_order = default_es_display_set_order;
+  }
+else {
+  def_display_set_order = default_en_display_set_order;
+  }
+
+//#define WORLD_DisplaySetOrder "DisplaySetOrder"
+char *display_set_order = getPreferenceOrDefault(&main_preferences,WORLD_DisplaySetOrder,
+   make_demo_mode?demo_display_set_order:def_display_set_order);
+set_display_set_order_based_on_string(display_set_order);
+}
+
+
+/*-------------------------------------
+set_displayset_preferences
+--------------------------------------*/
+/* called when the display set is changed */
+void set_displayset_preferences() {
+int i;
+i=0;
+char displayset_buffer[2000];
+//#define WORLD_display_display_set_ ""
+char *space = WORLD_display_display_set_;
+char *end=displayset_buffer;
+/* render background */
+for (i=0;i<display_stack_pointer;i++) {
+  if ((display_set_stack[i] != 2)&&(display_set_stack[i] != TOP_MENU_ID)) { /* if we are not the popup menu or top menu */
+//#define WORLD_display_display_set__pct_s_pct_d "%s%d"
+    sprintf(end,WORLD_display_display_set__pct_s_pct_d,space,display_set_stack[i]);
+    end = end+strlen(end);
+//#define WORLD_display_display_set__ " "
+    space = WORLD_display_display_set__;
+    }
+  }
+//#define WORLD_DisplaySetOrder "DisplaySetOrder"
+setPreference(&main_preferences,WORLD_DisplaySetOrder,displayset_buffer);
+}
+
+
+
+
+/*------------------------------------------------
+display_set_finish
+--------------------------------------------------*/
+/* this is called to initialie the display set - and is called again and again
+Most of this is only done once even if the init call is re-called from the front end
+Which it might be because of being semi-killed or maybe resized
+*/
+void display_set_finish() {
+//logit("display set finish ran graphics      ran_setup_graphics_once_before  %d->0"
+//  ,ran_setup_graphics_once_before);
+int i;
+for (i=registered_display_set_count-1;i>=0;i--) {
+  if (registered_display_sets[i].finish) {
+//    logit("finish %d %s\n",i,registered_display_sets[i].name);
+//    registered_display_sets[i].finish();
+    }
+  }
+
+ran_setup_graphics_once_before = 0;
+}
+
+
+
+/*------------------------------------------------
+display_set_init
+--------------------------------------------------*/
+/* this is called to initialie the display set - and is called again and again
+Most of this is only done once even if the init call is re-called from the front end
+Which it might be because of being semi-killed or maybe resized
+*/
+int display_set_init() {
+if (ran_setup_graphics_once_before) {
+//  logit("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11init force finish!!!!!\n");
+  display_set_finish();
+  }
+  
+//logit("display set init ran graphics      ran_setup_graphics_once_before  %d->0 "
+//  ,ran_setup_graphics_once_before);
+ran_setup_graphics_once_before = 0;
+  
+menu_up = 0;
+
+
+
+
+registered_display_set_count=0;
+int i=0;
+
+/* 0 */
+registered_display_sets[i++]= default_display_set;
+
+/* 1 */
+registered_display_sets[i++]= justin2_display_set;
+
+/* 2 */
+registered_display_sets[i++]= main_menu_display_set;
+
+/* 3 */
+registered_display_sets[i++]= purple_string_display_set;
+
+/* 4 */
+registered_display_sets[i++]= network_cube_display_set;
+
+/* 5 */
+registered_display_sets[i++]= backward_worm_display_set;
+
+/* 6 */
+registered_display_sets[i++]= words_display_set;
+
+/* 7 */
+registered_display_sets[i++]= top_menu_display_set;
+
+/*8 */
+registered_display_sets[i++]= visual_voice_display_set;
+
+/*9 */
+registered_display_sets[i++]= larry_harvey_display_set;
+//#define LARRY_HARVEY_DISPLAY_SET 9
+/*10*/
+registered_display_sets[i++]= mathias1_display_set;
+
+/*10*/
+//registered_display_sets[i++]= srikant1_display_set;
+
+registered_display_sets[i++]= staff_display_set;
+
+/* 11 */
+#ifdef LINUX_CLIENT
+registered_display_sets[i++]= projectm_display_set;
+#endif
+
+
+/*11*/
+registered_display_sets[i++]= window_shop_display_set;
+
+/*12*/
+registered_display_sets[i++]= buy_it_now_display_set;
+
+/*13*/
+
+/*14*/
+
+/*13*/
+
+registered_display_set_count=i;
+
+
+
+
+  
+menu_up = 0;
+
+last_width=0;
+last_height=0;
+last_screen_orientation=0;
+last_screen_layout = 0;
+
+/* handle raylib */
+//#define WORLD_Silent_Radiance "Silent Radiance"
+not_rl_InitWindow(save_width, save_height, WORLD_Silent_Radiance);
+// Init VR simulator (Oculus Rift CV1 parameters)
+
+srhmd = not_rl_GetVrDeviceInfo(NOT_RL_HMD_OCULUS_RIFT_CV1);
+not_rl_InitVrSimulator(srhmd);
+not_rl_vr_camera.position = (not_rl_Vector3){ 5.0f, 2.0f, 5.0f };    // Camera position
+not_rl_vr_camera.target = (not_rl_Vector3){ 0.0f, 2.0f, 0.0f };      // Camera looking at point
+not_rl_vr_camera.up = (not_rl_Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
+not_rl_vr_camera.fovy = 60.0f;                                // Camera field-of-view Y
+not_rl_SetCameraMode(not_rl_vr_camera, NOT_RL_CAMERA_FIRST_PERSON);         // Set first person camera mode
+
+if (!screen_drawmode) {
+//  ToggleVrMode();
+  }
+last_draw_mode=screen_drawmode;
+
+
+
+
+set_display_set_order_to_preferences();
+
+/* could have init specialty here  - init is before the graphic is completely setup */
+for (i=0;i<registered_display_set_count;i++) {
+  if (registered_display_sets[i].init) {
+//    logit("init %d %s\n",i,registered_display_sets[i].name);
+    registered_display_sets[i].init();
+    }
+  }
+
+return(0);
+}
+
+
+
+
+
+
+
+
+/*----------------------------------
+ setup_screen_for_internal_vr 
+-----------------------------------*/
+void     setup_screen_for_internal_vr(void) {
+
+save_or_ww = screen_orientation;
+save_ly_ww = screen_layout;
+save_xdpi_ww = xdpi;
+save_ydpi_ww = ydpi;
+
+      screen_orientation = 2;
+      screen_layout = 1;
+#ifdef LINUX_CLIENT      
+      screen_orientation=2;
+      screen_layout=0;
+//      xdpi = xdpi * 2.;
+#endif
+#ifdef __APPLE__
+      screen_orientation = 2;
+      screen_layout = 0;
+#endif      
+#ifdef ANDROID
+      screen_orientation = 2;
+      screen_layout = 0;
+#endif      
+}
+
+
+/*-----------------------------------------
+setup_screen_for_external_vr
+-------------------------------------------*/
+void setup_screen_for_external_vr(void) {
+      screen_orientation = save_or_ww;
+      screen_layout = save_ly_ww;
+      xdpi = save_xdpi_ww;
+      ydpi = save_ydpi_ww;
+
+      screen_orientation = 2;
+      screen_layout = 1;
+#ifdef LINUX_CLIENT      
+      screen_orientation=1;
+      screen_layout=1;
+//      xdpi = xdpi * 0.5;
+#endif
+#ifdef __APPLE__
+#endif      
+}
+
+
+/*-----------------------------------------
+restore_screen_from_internal_vr
+-------------------------------------------*/
+void restore_screen_from_internal_vr(void) {
+      screen_orientation = save_or_ww;
+      screen_layout = save_ly_ww;
+      xdpi = save_xdpi_ww;
+      ydpi = save_ydpi_ww;
+}
+
+
+
+/*------------------------------------------
+display_set_stream_is_closing
+--------------------------------------------*/
+/* This function tells all the visualizers that a change is a coming */
+void display_set_stream_is_closing() {
+int i;
+for (i=0;i<registered_display_set_count;i++) {
+  if  (registered_display_sets[i].finishStreaming) {
+//    logit("finish_reading %s",registered_display_sets[i].name);
+    registered_display_sets[i].finishStreaming(); /* Some display sets need o know when we switch channels */
+    }
+  }
+}
+
+
+/*--------------------------------------
+display_set_surface_changed 
+--------------------------------------*/
+/* this function tells all the visualizers that the surface is change by calling setupGraphics again - using different parameters 
+*/
+int display_set_surface_changed(int w,int h,int orientation,int layout,int draw_mode) {
+#ifdef LINUX_CLIENT
+   if (w > h*5) {
+      w = w/3;
+      }
+    else if (w > h*3) {
+      w = w/2;
+      }
+#endif
+gerr("beginning display_set_surface_changed\n");
+
+if ((w!=last_width)||(h!=last_height)||(orientation!= last_screen_orientation)||(draw_mode != last_draw_mode)) { /* if this is a real change versus just a  non-op */
+//    logit("Surface Changed w %d, h %d r %d l %d m %d rb %d",w,h,orientation,layout,draw_mode,ran_setup_graphics_once_before);
+    screen_orientation = orientation;
+//    logit("difference\n");
+#ifdef __APPLE__
+    if ((screen_orientation==1)||(screen_orientation==3)) {
+      screen_layout=0;
+      }
+    else {
+      screen_layout=1;
+      }
+#endif
+#ifdef ANDROID
+    if ((screen_orientation==1)||(screen_orientation==3)) {
+      screen_layout=0;
+      }
+    else {
+      screen_layout=1;
+      }
+#endif
+
+
+  if (draw_mode==1) {
+    last_width=w;last_height=h;
+    last_draw_mode = draw_mode;
+    last_screen_orientation = screen_orientation;
+    last_screen_layout = screen_layout;
+    int i;
+    
+
+
+    set_base_viewport(0,0,last_width,last_height,0);
+    
+gerr("beginning display_set_surface_changed2\n");
+    
+    // screen_layout was handled outside of this - in display_main_xxx   
+    for (i=0;i<registered_display_set_count;i++) {
+      setup_screen_for_internal_vr();
+#ifdef __APPLE__
+      if (registered_display_sets[i].changeScreen) {
+        logit("vr changeScreen %s done_before=%d",registered_display_sets[i].name,ran_setup_graphics_once_before);
+        registered_display_sets[i].changeScreen(w,h>>1,draw_mode); /* this is an init, and setup for width and height combined 
+                                                                 	based on the flag ran_setup_graphics_once_before */
+	}
+      else {
+        logit("vr setupGraphics %s done_before=%d",registered_display_sets[i].name,ran_setup_graphics_once_before);
+        registered_display_sets[i].setupGraphics(w,h>>1,draw_mode); /* this is an init, and setup for width and height combined based on the flag ran_setup_graphics_once_before */
+	}
+#else
+      if (registered_display_sets[i].changeScreen) {
+        logit("vr changeScreen %s done_before=%d",registered_display_sets[i].name,ran_setup_graphics_once_before);
+        registered_display_sets[i].changeScreen(w>>1,h,draw_mode); /* this is an init, and setup for width and height combined based on the flag ran_setup_graphics_once_before */
+	}
+      else {
+        logit("vr setupGraphice %s done_before=%d",registered_display_sets[i].name,ran_setup_graphics_once_before);
+        registered_display_sets[i].setupGraphics(w>>1,h,draw_mode); /* this is an init, and setup for width and height combined based on the flag ran_setup_graphics_once_before */
+	}
+#endif
+gerr("beginning display_set_surface_changedss\n");
+      restore_screen_from_internal_vr();
+gerr("beginning display_set_surface_changesd\n");
+      
+      }
+gerr("beginning display_set_surface_change3232d\n");
+#ifdef __APPLE__
+    setup_screen_for_internal_vr();
+    not_rl_setupGraphics(w>>1,h,draw_mode); // added - hopefully ok
+    restore_screen_from_internal_vr();
+#else
+    setup_screen_for_internal_vr();
+    not_rl_setupGraphics(w>>1,h,draw_mode); // added - hopefully ok
+    restore_screen_from_internal_vr();
+#endif
+gerr("beginning display_set_surfdsfdfsdace_changed\n");
+    
+    ran_setup_graphics_once_before=1;// this could change to 0 if we have to redo the graphics setup
+    }
+  else {
+    last_width=w;last_height=h;last_screen_orientation=screen_orientation;last_screen_layout = layout;last_draw_mode = draw_mode;
+    int i;
+    screen_orientation = orientation;
+
+    set_base_viewport(0,0,last_width,last_height,0);
+    // screen_layout was handled outside of this - in display_main_xxx   
+    
+     gerr("beginning display_set_ssas");      
+    for (i=0;i<registered_display_set_count;i++) {
+    logit("cc ds %d %s\n",i,registered_display_sets[i].name);
+      gerr("beginning display_set_ssasadsdurface_changed\n");
+      if (registered_display_sets[i].changeScreen) {
+
+        logit("changeScreen %s",registered_display_sets[i].name);
+        registered_display_sets[i].changeScreen(w,h,draw_mode); /* this is an init, and setup for width and height combined based on the flag ran_setup_graphics_once_before */
+	}
+      else {
+        logit("setupGraphics %s",registered_display_sets[i].name);
+        registered_display_sets[i].setupGraphics(w,h,draw_mode); /* this is an init, and setup for width and height combined based on the flag ran_setup_graphics_once_before */
+	}
+      gerr("done set\n");
+      }
+      gerr("beginning display_set_ssasadsssdurface_changed\n");
+    not_rl_setupGraphics(w,h,draw_mode); // added - hopefully ok
+      gerr("beginning display_set_ssasadsdurface_notchanged\n");
+    
+    ran_setup_graphics_once_before=1;  // this could change back to 0 if the gl stuff is lst
+    }
+  }    
+      gerr("beginning display_set_ssasadsdurface_changed_end\n");
+return(0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/*--------------------------
+remove_display_set
+----------------------------*/
+void remove_display_set(int set_id) {
+int i;
+for (i=0;i<display_stack_pointer;i++) {
+  if (set_id==display_set_stack[i]) break;
+  }
+if (i!=display_stack_pointer) {
+  for (;i<display_stack_pointer;i++) {
+    display_set_stack[i]=display_set_stack[i+1];
+    }
+  display_stack_pointer--;
+  }
+}
+
+
+/*-----------------------------------
+insert_display_set
+-------------------------------------*/
+void insert_display_set(int set_id) {
+int i;
+for (i=0;i<display_stack_pointer;i++) {
+  if(display_set_stack[i]==set_id) {
+    return;
+    }
+  }
+int menu_set;
+menu_set = pop_display_set();
+push_display_set(set_id);
+push_display_set(menu_set);
+}
+
+
+
+/*-------------------------------------
+insert_display_set_back
+---------------------------------------*/
+void insert_display_set_back(int set_id) {
+/* not the full back - because default is the full back position, one after that */
+int i;
+int j;
+remove_display_set(set_id); /* to reinsert it in the back, we will remove from the front - if it exists */
+i=1;
+if (i>display_stack_pointer) i=display_stack_pointer;
+for (j=display_stack_pointer;j>i;j--) {
+  display_set_stack[j]=display_set_stack[j-1];
+  }
+display_set_stack[i] = set_id;
+display_stack_pointer++;
+}
+
+
+
+void set_resplash_only_show_frame(int frames) {
+// tricky
+splash_frame_count = SPLASH_CLEAR_TIME-(frames);
+}
+
+
+
+static void set_base_viewport(int x1,int y1,int w,int h,int eye) {
+base_viewport_x1=x1;
+base_viewport_y1=y1;
+base_viewport_w=w;
+base_viewport_h=h;
+base_viewport_eye=eye;
+}
+
+
+void display_set_gl_base_viewport() {
+glViewport(base_viewport_x1,base_viewport_y1,base_viewport_w,base_viewport_h); 
+}
+
+
+//extern Matrix eyesViewOffset[2];  // from our Raylib freinly vr code
+
+
+
+
+
+
+
+/*------------------------------
+ display_set_render_vr
+--------------------------------*/
+/* ??? note - vrSimulatorReady set to zero will not draw to proper framebuffer - maybe thats why apple does not work */
+/* note -0 clearbackground might not be needed because vsSimulatorReady could be set to 0 */
+void display_set_render_vr() {
+//logit("VR\n");
+gerr("beginning\n");
+
+//    not_rl_ClearBackgroundForReals(NOT_RL_BLANK);
+#ifdef __APPLE__
+glBindBuffer(GL_ARRAY_BUFFER, 0);
+gerr("glBindBuffer");
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+gerr("glClear");
+
+#endif
+#ifdef ANDROID
+//not_rl_ClearBackgroundForReals(BLANK);
+#endif
+
+
+int i;
+i=0;
+ gerr("steppanwolfm2\n");
+
+not_rl_BeginVrDrawing();
+/*
+basically this:
+ 
+if vrSimulatorReady
+  rlEnableRenderTexture
+	glBindFramebuffer(GL_FRAMEBUFFER, not_rl_vrConfig.stereoFbo.id);
+  rlClearScreenBuffers
+	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  vrStereoRender = true
+*/
+ gerr("steppanwolfm1\n");
+
+not_rl_PretendNoVr();
+ gerr("steppanwolf0\n");
+
+//tell_apple_to_present_render_buffer(GL_RENDERBUFFER);
+setup_screen_for_internal_vr();
+glMatrix *eyesViewOffset = (glMatrix *)(not_rl_vrConfig.eyesViewOffset);
+glMatrix raylibeye[2];
+glMatrix oureye[2];
+  int eye;
+  for (eye=0;eye<2;eye++) {
+    raylibeye[eye] = (glMatrix)(eyesViewOffset[eye]);
+    oureye[eye] = raylibeye[eye];
+    int i;
+    for (i=0;i<3;i++) {
+    	oureye[eye].mat[i][3] *= (0.5 / srhmd.hScreenSize);
+    }
+  }
+ gerr("steppanwolf1\n");
+
+// skip if splash screen is during splash_clear_time
+if (splash_frame_count>=SPLASH_CLEAR_TIME) {
+
+  if (exclusive_display_stack) {
+    if (registered_display_sets[exclusive_display_stack].step) {
+      registered_display_sets[exclusive_display_stack].step();
+      }
+    i=display_stack_pointer;
+    }
+  else {  
+    for (i=0;i<display_stack_pointer;i++) {
+    //  logit("%d\n",display_set_stack[i]);
+      if (registered_display_set_count>display_set_stack[i]) { // in case weird db
+        if (registered_display_sets[display_set_stack[i]].step) {
+          registered_display_sets[display_set_stack[i]].step();  
+          }
+        }
+      }
+    }
+ gerr("steppanwolf\n");
+    
+  
+  for (eye=0;eye<2;eye++) {
+//    logit("VR eye %d\n",eye);
+    int the_start;
+    int the_end;
+    whichEye = eye; //copy to global var so can access it in visualizers
+#ifdef __APPLE__
+    the_start = (eye*(last_height>>1));
+    the_end = (eye+1)*(last_height>>1)-the_start;
+    set_base_viewport(0,the_start,last_width,the_end,eye);
+#else
+    the_start = (eye*(last_width>>1));
+    the_end = (eye+1)*(last_width>>1)-the_start;
+//    logit("set base viewport %d,%d,%d,%d,%d\n",the_start,0,the_end,last_height,eye);
+    set_base_viewport(the_start,0,the_end,last_height,eye);
+#endif    
+
+    /* render background */
+    if (i<display_stack_pointer) {
+#ifdef __APPLE__
+      glViewport(0,the_start, last_width, the_end);
+#else
+//      logit("render bg real viewport %d,%d,%d,%d,%d\n",the_start,0,the_end,last_height,eye);
+      glViewport(the_start, 0, the_end, last_height);
+#endif      
+      gerr("glViewportds1vr");
+      registered_display_sets[display_set_stack[i]].renderBackground(eye,oureye+eye);  
+      gerr("render1back");
+      }
+    
+    if (exclusive_display_stack) {
+#ifdef __APPLE__
+          set_base_viewport(0,the_start,last_width,the_end,eye);
+          glViewport(0,the_start, last_width, the_end);
+          gerr("glViewportds2avr");
+#else
+          set_base_viewport(the_start,0,the_end,last_height,eye);
+          glViewport(the_start, 0, the_end, last_height);
+//          logit("set base viewport/viewport exclusive(%d)  %d,%d,%d,%d,%d\n",
+//	      exclusive_display_stack,the_start,0,the_end,last_height,eye);
+          gerr("glViewportds2othervr");
+#endif
+	  
+	  // here call from DrawBuffersDefault to get the various eye matrix stuff
+          registered_display_sets[exclusive_display_stack].renderMain(eye,oureye+eye);  
+          i=display_stack_pointer;
+      }  
+    else {
+      for (i=0;i<display_stack_pointer;i++) {
+        if (registered_display_set_count>display_set_stack[i]) { // in case weird db
+          gerr("rendsdsds");
+#ifdef __APPLE__
+          set_base_viewport(0,the_start,last_width,the_end,eye);
+          glViewport(0,the_start, last_width, the_end);
+          gerr("glViewportds2vr");
+#else
+          set_base_viewport(the_start,0,the_end,last_height,eye);
+          glViewport(the_start, 0, the_end, last_height);
+          gerr("glViewportds2vr");
+//          logit("set base viewport/viewport vr(%d)  %d,%d,%d,%d,%d\n",
+//	      i,the_start,0,the_end,last_height,eye);
+#endif
+          gerr("glViewportds2vr");
+          registered_display_sets[display_set_stack[i]].renderMain(eye,oureye+eye);  
+          gerr("render2");
+          }
+        }
+      }
+    }
+  }
+else {
+  i=display_stack_pointer;
+  }
+
+  
+i--;
+
+for (eye=0;eye<2;eye++) {
+  int the_start;
+  int the_end;
+#ifdef __APPLE__
+    the_start = (eye*(last_height>>1));
+    the_end = (eye+1)*(last_height>>1)-the_start;
+    set_base_viewport(0,the_start,last_width,the_end,eye);
+    glViewport(0,the_start, last_width,the_end);
+  gerr("render3aaa");
+#else
+    the_start = (eye*(last_width>>1));
+    the_end = (eye+1)*(last_width>>1)-the_start;
+    set_base_viewport(the_start,0,the_end,last_height,eye);
+//          logit("set base viewport/viewport vr top(%d)  %d,%d,%d,%d,%d\n",
+//	      display_set_stack[0],the_start,0,the_end,last_height,eye);
+    glViewport(the_start, 0, the_end, last_height);
+    gerr("renderoth");
+    
+#endif    
+  
+  // ??? need to set projection    
+  // Always render default top
+  registered_display_sets[display_set_stack[0]].renderForeground(eye,oureye+eye);
+  gerr("render3");
+  if (i>=0) {
+    if (!exclusive_display_stack) {
+
+#ifdef __APPLE__
+          set_base_viewport(0,the_start,last_width,the_end,eye);
+          glViewport(0,the_start, last_width, the_end);
+          gerr("glViewportds2vr");
+#else
+          set_base_viewport(the_start,0,the_end,last_height,eye);
+          glViewport(the_start, 0, the_end, last_height);
+//          logit("set base viewport/viewport vr top2(%d)  %d,%d,%d,%d,%d\n",
+//	      i,the_start,0,the_end,last_height,eye);
+          gerr("glViewportds2vr");
+#endif
+
+      if (registered_display_sets[display_set_stack[i]].renderForeground)
+        registered_display_sets[display_set_stack[i]].renderForeground(eye,oureye+eye);
+      gerr("render4");
+      }
+    }
+  }
+
+//logit("set setup screen for external vr\n");
+setup_screen_for_external_vr();
+
+//logit("stop pretending no vr\n");
+not_rl_StopPretendingNoVr();
+//logit("end vr drawing\n");
+not_rl_EndVrDrawing();
+
+//ToggleVrMode();
+//logit("restore screen from internal vr\n");
+restore_screen_from_internal_vr();
+
+}
+
+
+/*----------------------
+ in core.c because we are fudging some status flags
+This is done so we can use raylib in non vr mode - but still in vr mode
+
+static int pretend_vrSimulatorReady=0;
+static int pretend_vrStereoRender=0;
+void PretendNoVr() {
+pretend_vrSimulatorReady=vrSimulatorReady;
+pretend_vrStereoRender=vrStereoRender;
+vrSimulatorReady=0;
+vrStereoRender=0;
+}
+ 
+void StopPretendingNoVr() {
+vrStereoRender=pretend_vrStereoRender;
+vrSimulatorReady=pretend_vrSimulatorReady;
+}
+----------------------
+*/
+
+
+/*--------------------------------
+display_set_render
+---------------------------------*/
+/* Render the display set to the screen */
+void display_set_render() {
+//logit("dSr %d\n",ran_setup_graphics_once_before);
+
+if (!ran_setup_graphics_once_before) return; // quit if we did not init 
+if (last_draw_mode==1) {display_set_render_vr();return;}    // Do the vr version instead
+gerr("topstart");
+
+int i;
+i=0;
+set_base_viewport(0,0,last_width,last_height,0);
+glViewport(0, 0, last_width, last_height);
+gerr("glViewportds12xxx");
+
+not_rl_PretendNoVr();
+
+/* render background */
+if (i<display_stack_pointer) {
+  registered_display_sets[display_set_stack[i]].renderBackground(0,NULL);
+  }
+  
+if (exclusive_display_stack) {
+  registered_display_sets[0].step();
+  if (registered_display_sets[exclusive_display_stack].step) {
+    registered_display_sets[exclusive_display_stack].step();
+    }
+  glViewport(0, 0, last_width, last_height);
+  gerr("glViewportds2");
+  registered_display_sets[0].renderMain(0,NULL);  
+  registered_display_sets[exclusive_display_stack].renderMain(0,NULL);  
+  i=display_stack_pointer;
+  }  
+else if (splash_frame_count>=SPLASH_CLEAR_TIME) {
+  for (i=0;i<display_stack_pointer;i++) {
+//    logit("%d\n",display_set_stack[i]);
+    if (registered_display_set_count>display_set_stack[i]) { // in case weird db
+      if (registered_display_sets[display_set_stack[i]].step) {
+        registered_display_sets[display_set_stack[i]].step();  
+	}
+      }
+    }
+    
+    
+  for (i=0;i<display_stack_pointer;i++) {
+//    logit("%d\n",display_set_stack[i]);
+    if (registered_display_set_count>display_set_stack[i]) { // in case weird db
+      glViewport(0, 0, last_width, last_height);
+      gerr("glViewportds2");
+      registered_display_sets[display_set_stack[i]].renderMain(0,NULL);  
+      }
+    }
+  }
+else {
+  i=display_stack_pointer;
+  }
+  
+// Always render default top
+  registered_display_sets[display_set_stack[0]].renderForeground(0,NULL);
+  
+  
+if (i> 1) {
+  i--;
+  if (!exclusive_display_stack) {
+    glViewport(0, 0, last_width, last_height);
+    gerr("glViewportdsww");
+    if (registered_display_sets[display_set_stack[i]].renderForeground) {
+      registered_display_sets[display_set_stack[i]].renderForeground(0,NULL);
+      }
+    }
+  }
+
+not_rl_StopPretendingNoVr();
+
+}
+
+
+/*-----------------------
+display_set_touchEvent
+---------------------------*/
+void display_set_touchEvent(int action,float x,float y) {
+int i;
+i=display_stack_pointer-1;
+if (i>=0) {
+  if (registered_display_sets[display_set_stack[i]].touchEvent) {
+    registered_display_sets[display_set_stack[i]].touchEvent(action,x,y,NULL);
+    }
+  }
+}
+
+
+/*-------------------------
+display_set_keyEvent
+--------------------------*/
+int display_set_keyEvent(int action) {
+int i;
+int ret=0;
+i=display_stack_pointer-1;
+if (i>=0) {
+  if (registered_display_sets[display_set_stack[i]].keyEvent) {
+    ret |=registered_display_sets[display_set_stack[i]].keyEvent(action,0.f,0.f,NULL);
+    }
+  else ret=0;
+  }
+return ret;
+}
+
+/*----------------------------
+push_display_set
+-----------------------------*/
+void push_display_set(int ds) {
+display_set_stack[display_stack_pointer++] = ds;
+}
+
+
+/*-----------------------
+pop_display_set
+------------------------*/
+int pop_display_set() {
+return display_set_stack[--display_stack_pointer];
+}
+
+/*----------------------
+top_display_set
+------------------------*/
+int top_display_set() {
+return display_set_stack[display_stack_pointer-1];
+}
+
+
+
+
+/* end fo display_set.c */

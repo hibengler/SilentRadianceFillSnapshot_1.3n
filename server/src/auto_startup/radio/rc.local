@@ -1,0 +1,42 @@
+#!/bin/sh -e
+#
+# rc.local
+# $Revision: 1.2 $
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+# here we mount ssh drives if necessary
+
+sshfs -p 26 -o allow_other,IdentityFile=~z/.ssh/id_rsa \
+spookdub@64.13.145.243:/u2/spookbak/spookdub/ /spookdub
+
+sleep 1
+su - -c "/home/z/bin/mb.sh" z &
+su - -c "/home/z/bin/play.sh" z &
+
+exit 0
+
+
+
+#
+# Log:
+# $Log: rc.local,v $
+# Revision 1.2  2018/12/12 12:22:41  hib
+# got radio1 automatically working
+#
+# Revision 1.1  2018/12/12 11:19:16  hib
+# wip
+#
+# Revision 1.1  2016/09/17 06:27:25  hib
+# cleanup
+#
+# Revision 1.2  2016/09/17 06:26:19  hib
+# added version number
+#
+#

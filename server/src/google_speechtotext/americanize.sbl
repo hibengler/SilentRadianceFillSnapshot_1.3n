@@ -1,0 +1,111 @@
+* Silent Radiance wifi broadcast for digital silent disco.
+* $Revision: 1.1 $
+* Copyright (C) 2018 Hibbard M. Engler And Dennis Domine and Ivonne Laguer
+* 
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License   
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+* 
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+* 
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+
+
+	non128 = &alphabet
+	&anchor = 0
+	i = 0
+fl1	non128 char(i) = ''
+	i = i + 1
+	gt(i,127) :f(fl1)
+	&anchor = 1
+	
+
+	
+	define('ord(x)a,b,c)')	:(end_ord)
+ord
+	a = &anchor
+	&anchor = 0
+	b = &alphabet
+	c = ''
+	x any(&alphabet) . c
+	b c arbno(any(&alphabet)) rpos(0) = ''
+	&anchor = a
+	ord = size(b)
+	:(return)
+end_ord					
+	
+	
+	define('handle_utf8(x)a,b,c,d,e,f')	:(end_handle_utf8)
+handle_utf8
+	a = &anchor
+	
+	
+h8l
+	&anchor = 0
+h8l1	x char(195) char(161) = 'a'  :s(h8l1)
+h8l2	x char(195) char(179) = 'o'  :s(h8l2)
+h8l3	x char(195) char(169) = 'e'  :s(h8l3)
+h8l4	x char(195) char(173) = 'i'  :s(h8l4)
+h8l5	x char(195) char(186) = 'u'  :s(h8l4)
+h8l6	x char(195) char(177) = 'n'  :s(h8l5)
+	
+	
+	
+	
+	
+	&anchor = 1
+	x arbno(any(&alphabet)) . b span(non128) . c = ''	:f(h8ok)
+	
+	
+	d = ''
+	e = ''
+	f = ''	
+	c any(non128) . d = ''
+	c any(non128) . e = ''
+	c any(non128) . f = ''
+	c = d e f
+	terminal = 'unknown code: ('  c ') '
+	terminal = 'unknown code: (' d ' ' e ' ' f ') '
+	terminal = 'hey ' ord(d)
+	terminal = ord(e)
+	terminal = ord(f)
+	terminal = 'look it up '
+	:(done)
+	
+	
+	
+	
+h8ok
+	handle_utf8 = x
+	&anchor = a
+	:(return)
+end_handle_utf8		
+	
+
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+* $Log: americanize.sbl,v $
+* Revision 1.1  2018/09/30 15:37:21  hib
+* did some spit and shine on the jsons_to_srx
+* json_To_srx - basically words as well - for one file. Meh. :(
+* notes - make 10 files from one - need to make the intro sound ohm or something
+*

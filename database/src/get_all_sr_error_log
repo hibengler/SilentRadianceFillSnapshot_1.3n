@@ -1,0 +1,42 @@
+#!/bin/bash
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export APACHE_LOG_DIR="${APACHE_LOG_DIR:-/var/log/apache2}"
+cd $APACHE_LOG_DIR
+
+
+{
+ls ssl_ds_error.log.*.gz | awk '{print "gunzip <"$1}'
+ls ssl_ds_error.log.* | grep -v gz\$ | awk '{print "cat <"$1}'
+ls ssl_ds_error.log | awk '{print "cat <"$1}'
+} | bash | sbl $SR_BIN/filter_sr_error_log.sbl -u ds.silentradiance.com
+
+
+{
+ls ssl_pt_error.log.*.gz | awk '{print "gunzip <"$1}'
+ls ssl_pt_error.log.* | grep -v gz\$ | awk '{print "cat <"$1}'
+ls ssl_pt_error.log | awk '{print "cat <"$1}'
+} | bash | sbl $SR_BIN/filter_sr_error_log.sbl -u pt.silentradiance.com
+
+
+# hm is disabled
+#{
+#ls ssl_hm_error.log.*.gz | awk '{print "gunzip <"$1}'
+#ls ssl_hm_error.log.* | grep -v gz\$ | awk '{print "cat <"$1}'
+#ls ssl_hm_error.log | awk '{print "cat <"$1}'
+#} | bash | sbl $SR_BIN/filter_sr_error_log.sbl -u hm.silentradiance.com
+
+
+{
+ls ssl_sr000_error.log.*.gz | awk '{print "gunzip <"$1}'
+ls ssl_sr000_error.log.* | grep -v gz\$ | awk '{print "cat <"$1}'
+ls ssl_sr000_error.log | awk '{print "cat <"$1}'
+} | bash | sbl $SR_BIN/filter_sr_error_log.sbl -u sr000.silentradiance.com
+
+
+{
+ls ssl_reggaeton_error.log.*.gz | awk '{print "gunzip <"$1}'
+ls ssl_reggaeton_error.log.* | grep -v gz\$ | awk '{print "cat <"$1}'
+ls ssl_reggaeton_error.log | awk '{print "cat <"$1}'
+} | bash | sbl $SR_BIN/filter_sr_error_log.sbl -u reggaeton.silentradiance.com
+
+

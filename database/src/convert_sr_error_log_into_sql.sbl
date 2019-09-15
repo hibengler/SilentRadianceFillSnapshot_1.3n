@@ -1,0 +1,91 @@
+* this just extracts the source text.  It captures the log info for posterity
+* it expects the domain name
+* sbl convert_sr_error_log_into_sql.sbl </tmp/l | fieldu 1 |mysql -u hib -s sr
+* bash get_all_sr_error_log | tee original_error_log.2018_03_21 | sbl convert_sr_error_log_into_sql.sbl | fieldu 1 | mysql -u hib -s sr
+* 
+
+	website = host(0)
+	website '-u ' = ''
+
+	&anchor = 0
+	
+	word = span('abcdefghijklmnopqrstuvwxyz')
+	
+	all_but_vertical_bar = &alphabet
+	all_but_vertical_bar '|' = ''
+	xword = ( span(all_but_vertical_bar) | '' )
+	acode = 'sd' | 'cd'
+	number = span('0123456789')
+	ip_address = ( number '.' number '.' number '.' number ) | ''
+	unix_time = number
+	bar = '|'
+	position = number
+	session = xword
+	extra1 = xword
+	extra2 = xword
+	
+	good_line = xword . the_dns_name '|' xword . the_code '|' xword . the_ip_address '|' xword . the_unix_time '|' xword . the_position 
++		'|' xword . the_session_code '|' xword . the_extra1 '|' xword . the_extra2 '|' xword . the_command '|' xword . the_referer '|' xword . the_credential_source '|' xword . the_user_code '|' xword . something '|'
+	
+	define('q(xin)') :(done_q)
+q	q = "'" xin "'"
+	:(return)
+done_q
+
+	define('r(xin)') :(done_r)
+r	r = xin
+	:(return)
+done_r
+	
+	&anchor = 1
+	
+loop	x = input	:f(endd)
+	x good_line 	:f(loop)
+
+* insert sr_names
+	output = '/*00*/insert into sr_names(dns_name) select ' q(the_dns_name) ' where not exists (select 1 from sr_names where dns_name = ' q(the_dns_name) ');'
+	
+* insert sr_ip_addresses
+	output = '/*01*/insert into sr_ip_addresses(ip_address) select ' q(the_ip_address) ' where not exists (select 1 from sr_ip_addresses where ip_address = ' q(the_ip_address) ');'
+
+	ident(the_user_code,'')	:f(got_user_name)
+	the_user_code = the_ip_address
+got_user_name
+* insert sr_users
+	output = '/*02*/insert into sr_users(user_code) select ' q(the_user_code) ' where not exists (select 1 from sr_users where user_code = ' q(the_user_code) ');'
+	
+* insert sr_user_ip_addresses
+	output = '/*03*/insert into sr_user_ip_addresses(user_code,ip_address) select ' q(the_user_code) ',' q(the_ip_address) ' where not exists (select 1 from sr_user_ip_addresses where user_code = ' q(the_user_code) ' and ip_address = ' q(the_ip_address) ');'
+	
+* insert into sr_web_programs	
+	output = '/*04*/insert into sr_web_programs(dns_name,program_name) select ' q(the_dns_name) ',' q(the_command) ' where not exists (select 1 from sr_web_programs where dns_name = ' q(the_dns_name) ' and program_name = ' q(the_command) ');'
+	
+	
+* user web programs
+	output = '/*05*/insert into sr_user_web_programs(user_code,ip_address,dns_name,program_name) select '
++	 			 q(the_user_code) ',' q(the_ip_address) ',' q(the_dns_name) ',' q(the_command) 
++                ' where not exists (select 1 from sr_user_web_programs where dns_name = ' q(the_dns_name) ' and program_name = ' q(the_command) 
++                ' and user_code = ' q(the_user_code) ' and ip_address = ' q(the_ip_address) ');'
+
+* sessions
+	the_code 'sd'	:f(session_cd)
+	output = '/*06*/insert into sr_sessions(session_code,start_unix_time,end_unix_time,start_position,end_position,user_code,ip_address,dns_name,program_name) '
++		'select ' q(the_session_code) ',' r(the_unix_time) ',' r( the_unix_time ) ',' r(the_position) ',' r(the_position) ','
++		   q(the_user_code) ',' q(the_ip_address) ',' q(the_dns_name) ',' q(the_command)
++		 ' where not exists (select 1 from sr_sessions where session_code = '  q(the_session_code) ' and start_unix_time = '  r(the_unix_time) ');'
+	:(loop)
+session_cd		
+	output = '/*07*/ update sr_sessions set end_unix_time = greatest(end_unix_time,' r( the_unix_time ) '),'
++		'end_position = greatest(end_position,' r(the_position) ') '
++		'where session_code = ' q(the_session_code) ' and start_unix_time < ' r(the_unix_time) ' and end_unix_time >=  ' r( ( the_unix_time - 19 ) ) ';'
+	:(loop)
+	
+	
+endd
+end
+
+
+*pt.silentradiance.com|sd|24.4.35.231|1521452961|2231369728|bn2ua33zuwwqndwdccstp|||/var/www/pt.silentradiance.com/download7.cgi|https://pt.silentradiance.com/receiver.html|||||||||||
+
+
+

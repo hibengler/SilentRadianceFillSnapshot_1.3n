@@ -1,0 +1,213 @@
+Script started on Sat 19 Apr 2014 01:53:25 AM PDT
+]0;root@legacy: ~/installsroot@legacy:~/installs# wget http://downloads.openwrt.org/sources...a-3.130.20.0 .o
+--2014-04-19 01:53:37--  http://downloads.openwrt.org/sources...a-3.130.20.0.o
+Resolving downloads.openwrt.org (downloads.openwrt.org)... 78.24.191.177
+Connecting to downloads.openwrt.org (downloads.openwrt.org)|78.24.191.177|:80... connected.
+HTTP request sent, awaiting response... 404 Not Found
+2014-04-19 01:53:38 ERROR 404: Not Found.
+
+]0;root@legacy: ~/installsroot@legacy:~/installs# wget http://downloads.openwrt.org/sources/wl_apsta-3.130 .20.0.o
+--2014-04-19 01:53:55--  http://downloads.openwrt.org/sources/wl_apsta-3.130.20.0.o
+Resolving downloads.openwrt.org (downloads.openwrt.org)... 78.24.191.177
+Connecting to downloads.openwrt.org (downloads.openwrt.org)|78.24.191.177|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 652866 (638K) [application/octet-stream]
+Saving to: ‘wl_apsta-3.130.20.0.o’
+
+ 0% [                                       ] 0           --.-K/s               2% [>                                      ] 17,297      62.2KB/s              6% [=>                                     ] 40,213      76.1KB/s             14% [====>                                  ] 91,437       118KB/s             22% [=======>                               ] 148,053      141KB/s             31% [===========>                           ] 208,713      160KB/s             39% [==============>                        ] 259,937      172KB/s             48% [=================>                     ] 317,901      180KB/s             58% [=====================>                 ] 382,605      193KB/s             68% [=========================>             ] 448,657      201KB/s             80% [==============================>        ] 522,797      205KB/s             92% [==================================>    ] 600,981      208KB/s             100%[======================================>] 652,866      221KB/s   in 2.9s   
+
+2014-04-19 01:53:59 (221 KB/s) - ‘wl_apsta-3.130.20.0.o’ saved [652866/652866]
+
+]0;root@legacy: ~/installsroot@legacy:~/installs# wget http://mirror2.openwrt.org/sources/broadcom-wl-4.15 0.10.5.tar.bz2
+--2014-04-19 01:54:08--  http://mirror2.openwrt.org/sources/broadcom-wl-4.150.10.5.tar.bz2
+Resolving mirror2.openwrt.org (mirror2.openwrt.org)... 46.4.11.11
+Connecting to mirror2.openwrt.org (mirror2.openwrt.org)|46.4.11.11|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 3888794 (3.7M) [application/x-bzip2]
+Saving to: ‘broadcom-wl-4.150.10.5.tar.bz2’
+
+ 0% [                                       ] 0           --.-K/s               0% [                                       ] 5,080       20.7KB/s              0% [                                       ] 13,168      26.8KB/s              0% [                                       ] 23,952      32.5KB/s              1% [                                       ] 42,824      44.0KB/s              2% [                                       ] 80,568      66.7KB/s              3% [>                                      ] 149,316      103KB/s              5% [=>                                     ] 231,544      137KB/s              8% [==>                                    ] 313,772      163KB/s             10% [==>                                    ] 396,000      182KB/s             12% [===>                                   ] 479,576      197KB/s             14% [====>                                  ] 561,804      210KB/s             16% [=====>                                 ] 645,380      220KB/s             18% [======>                                ] 728,956      230KB/s  eta 13s    20% [=======>                               ] 815,228      239KB/s  eta 13s    23% [========>                              ] 901,500      246KB/s  eta 13s    25% [========>                              ] 989,120      253KB/s  eta 13s    27% [=========>                             ] 1,079,436    259KB/s  eta 13s    30% [==========>                            ] 1,173,796    279KB/s  eta 10s    32% [===========>                           ] 1,272,200    301KB/s  eta 10s    35% [============>                          ] 1,374,648    337KB/s  eta 10s    38% [=============>                         ] 1,481,140    352KB/s  eta 10s    40% [==============>                        ] 1,591,676    364KB/s  eta 10s    43% [================>                      ] 1,710,300    375KB/s  eta 7s     47% [=================>                     ] 1,835,664    390KB/s  eta 7s     50% [==================>                    ] 1,967,768    403KB/s  eta 7s     54% [====================>                  ] 2,109,308    412KB/s  eta 7s     57% [=====================>                 ] 2,254,892    440KB/s  eta 7s     61% [======================>                ] 2,372,168    447KB/s  eta 4s     64% [========================>              ] 2,498,880    460KB/s  eta 4s     67% [=========================>             ] 2,640,420    492KB/s  eta 4s     71% [===========================>           ] 2,799,484    507KB/s  eta 4s     76% [============================>          ] 2,976,072    539KB/s  eta 4s     79% [==============================>        ] 3,104,132    558KB/s  eta 2s     82% [===============================>       ] 3,211,972    559KB/s  eta 2s     85% [================================>      ] 3,337,336    578KB/s  eta 2s     89% [==================================>    ] 3,493,704    597KB/s  eta 2s     93% [===================================>   ] 3,641,984    621KB/s  eta 2s     97% [=====================================> ] 3,794,308    623KB/s  eta 0s     100%[======================================>] 3,888,794    638KB/s   in 8.9s   
+
+2014-04-19 01:54:17 (428 KB/s) - ‘broadcom-wl-4.150.10.5.tar.bz2’ saved [3888794/3888794]
+
+]0;root@legacy: ~/installsroot@legacy:~/installs#  tar xfvj broadcom-wl-4.150.10.5.tar.bz2 
+broadcom-wl-4.150.10.5/
+broadcom-wl-4.150.10.5/driver/
+broadcom-wl-4.150.10.5/driver/config/
+broadcom-wl-4.150.10.5/driver/config/wlconfig_apdef
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_ap
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_ap_1chipG
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_ap_micro
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_ap_mimo
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_apsta
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_apsta_1chipG
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_apsta_micro
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_apsta_mimo
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_sta
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_sta_1chipG
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_sta_micro
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_router_sta_mimo
+broadcom-wl-4.150.10.5/driver/config/wlconfig_lx_shared
+broadcom-wl-4.150.10.5/driver/config/wlconfig_micro
+broadcom-wl-4.150.10.5/driver/config/wlconfig_nomimo
+broadcom-wl-4.150.10.5/driver/config/wl_default
+broadcom-wl-4.150.10.5/driver/config/wl_hnd
+broadcom-wl-4.150.10.5/driver/wl_ap_micro.o
+broadcom-wl-4.150.10.5/driver/wl_ap_mimo.o
+broadcom-wl-4.150.10.5/driver/wl_ap.o
+broadcom-wl-4.150.10.5/driver/wl_apsta_micro.o
+broadcom-wl-4.150.10.5/driver/wl_apsta_mimo.o
+broadcom-wl-4.150.10.5/driver/wl_apsta.o
+broadcom-wl-4.150.10.5/driver/wl_sta_micro.o
+broadcom-wl-4.150.10.5/driver/wl_sta_mimo.o
+broadcom-wl-4.150.10.5/driver/wl_sta.o
+broadcom-wl-4.150.10.5/nas_exe.o
+broadcom-wl-4.150.10.5/wl_exe.o
+broadcom-wl-4.150.10.5/include/
+broadcom-wl-4.150.10.5/include/UdpLib.h
+broadcom-wl-4.150.10.5/include/bcm4710.h
+broadcom-wl-4.150.10.5/include/bcm947xx.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/
+broadcom-wl-4.150.10.5/include/bcmcrypto/aes.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/aeskeywrap.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/bcmccx.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/bn.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/ccx.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/des.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/dh.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/hmac_sha256.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/md4.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/md5.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/passhash.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/prf.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/rc4.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/rijndael-alg-fst.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/sha1.h
+broadcom-wl-4.150.10.5/include/bcmcrypto/sha256.h
+broadcom-wl-4.150.10.5/include/bcmdefs.h
+broadcom-wl-4.150.10.5/include/bcmdevs.h
+broadcom-wl-4.150.10.5/include/bcmendian.h
+broadcom-wl-4.150.10.5/include/bcmnvram.h
+broadcom-wl-4.150.10.5/include/bcmotp.h
+broadcom-wl-4.150.10.5/include/bcmparams.h
+broadcom-wl-4.150.10.5/include/bcmperf.h
+broadcom-wl-4.150.10.5/include/bcmrobo.h
+broadcom-wl-4.150.10.5/include/bcmsrom.h
+broadcom-wl-4.150.10.5/include/bcmstdlib.h
+broadcom-wl-4.150.10.5/include/bcmutils.h
+broadcom-wl-4.150.10.5/include/bcmwifi.h
+broadcom-wl-4.150.10.5/include/bitfuncs.h
+broadcom-wl-4.150.10.5/include/epivers.h
+broadcom-wl-4.150.10.5/include/epivers.h.in
+broadcom-wl-4.150.10.5/include/etioctl.h
+broadcom-wl-4.150.10.5/include/flash.h
+broadcom-wl-4.150.10.5/include/flashutl.h
+broadcom-wl-4.150.10.5/include/hndchipc.h
+broadcom-wl-4.150.10.5/include/hndcpu.h
+broadcom-wl-4.150.10.5/include/hnddma.h
+broadcom-wl-4.150.10.5/include/hndgige.h
+broadcom-wl-4.150.10.5/include/hndmips.h
+broadcom-wl-4.150.10.5/include/hndpci.h
+broadcom-wl-4.150.10.5/include/hndpmu.h
+broadcom-wl-4.150.10.5/include/linux_gpio.h
+broadcom-wl-4.150.10.5/include/linuxver.h
+broadcom-wl-4.150.10.5/include/min_osl.h
+broadcom-wl-4.150.10.5/include/mipsinc.h
+broadcom-wl-4.150.10.5/include/ndiserrmap.h
+broadcom-wl-4.150.10.5/include/osl.h
+broadcom-wl-4.150.10.5/include/pcicfg.h
+broadcom-wl-4.150.10.5/include/proto/
+broadcom-wl-4.150.10.5/include/proto/802.11.h
+broadcom-wl-4.150.10.5/include/proto/802.11e.h
+broadcom-wl-4.150.10.5/include/proto/802.1d.h
+broadcom-wl-4.150.10.5/include/proto/bcmeth.h
+broadcom-wl-4.150.10.5/include/proto/bcmevent.h
+broadcom-wl-4.150.10.5/include/proto/bcmip.h
+broadcom-wl-4.150.10.5/include/proto/bcmtcp.h
+broadcom-wl-4.150.10.5/include/proto/eap.h
+broadcom-wl-4.150.10.5/include/proto/eapol.h
+broadcom-wl-4.150.10.5/include/proto/ethernet.h
+broadcom-wl-4.150.10.5/include/proto/vlan.h
+broadcom-wl-4.150.10.5/include/proto/wpa.h
+broadcom-wl-4.150.10.5/include/rts/
+broadcom-wl-4.150.10.5/include/rts/crc.h
+broadcom-wl-4.150.10.5/include/sbchipc.h
+broadcom-wl-4.150.10.5/include/sbconfig.h
+broadcom-wl-4.150.10.5/include/sbgige.h
+broadcom-wl-4.150.10.5/include/sbhndcpu.h
+broadcom-wl-4.150.10.5/include/sbhnddma.h
+broadcom-wl-4.150.10.5/include/sbhndmips.h
+broadcom-wl-4.150.10.5/include/sbhndpio.h
+broadcom-wl-4.150.10.5/include/sbmemc.h
+broadcom-wl-4.150.10.5/include/sbpci.h
+broadcom-wl-4.150.10.5/include/sbpcie.h
+broadcom-wl-4.150.10.5/include/sbpcmcia.h
+broadcom-wl-4.150.10.5/include/sbsdio.h
+broadcom-wl-4.150.10.5/include/sbsdpcmdev.h
+broadcom-wl-4.150.10.5/include/sbsdram.h
+broadcom-wl-4.150.10.5/include/sbsocram.h
+broadcom-wl-4.150.10.5/include/sbsprom.h
+broadcom-wl-4.150.10.5/include/sbutils.h
+broadcom-wl-4.150.10.5/include/sflash.h
+broadcom-wl-4.150.10.5/include/trxhdr.h
+broadcom-wl-4.150.10.5/include/typedefs.h
+broadcom-wl-4.150.10.5/include/wlioctl.h
+broadcom-wl-4.150.10.5/include/linux_osl.h
+broadcom-wl-4.150.10.5/shared/
+broadcom-wl-4.150.10.5/shared/bcmotp.c
+broadcom-wl-4.150.10.5/shared/bcmrobo.c
+broadcom-wl-4.150.10.5/shared/bcmsrom.c
+broadcom-wl-4.150.10.5/shared/bcmstdlib.c
+broadcom-wl-4.150.10.5/shared/bcmutils.c
+broadcom-wl-4.150.10.5/shared/boot.S
+broadcom-wl-4.150.10.5/shared/bzip2_inflate.c
+broadcom-wl-4.150.10.5/shared/cfe_osl.c
+broadcom-wl-4.150.10.5/shared/flashutl.c
+broadcom-wl-4.150.10.5/shared/gzip_inflate.c
+broadcom-wl-4.150.10.5/shared/hndchipc.c
+broadcom-wl-4.150.10.5/shared/hnddma.c
+broadcom-wl-4.150.10.5/shared/hndgige.c
+broadcom-wl-4.150.10.5/shared/hndmips.c
+broadcom-wl-4.150.10.5/shared/hndpci.c
+broadcom-wl-4.150.10.5/shared/hndpmu.c
+broadcom-wl-4.150.10.5/shared/hndrte.lds.in
+broadcom-wl-4.150.10.5/shared/linux_gpio.c
+broadcom-wl-4.150.10.5/shared/linux_osl.c
+broadcom-wl-4.150.10.5/shared/load.c
+broadcom-wl-4.150.10.5/shared/min_osl.c
+broadcom-wl-4.150.10.5/shared/nvramstubs.c
+broadcom-wl-4.150.10.5/shared/sbsdram.S
+broadcom-wl-4.150.10.5/shared/sbutils.c
+broadcom-wl-4.150.10.5/shared/sflash.c
+broadcom-wl-4.150.10.5/shared/sromstubs.c
+broadcom-wl-4.150.10.5/shared/xip.lds.in
+]0;root@legacy: ~/installsroot@legacy:~/installs# echo " [Khttp://ubuntuforums.org/showthread.php?t=2039020"  >>readme.txt
+]0;root@legacy: ~/installsroot@legacy:~/installs# 
+]0;root@legacy: ~/installsroot@legacy:~/installs# 
+]0;root@legacy: ~/installsroot@legacy:~/installs# echo "http://ubuntuforums.org/showthread.php?t=2039020" >>>readme.txt[A]0;root@legacy: ~/installsroot@legacy:~/installs# wget http://mirror2.openwrt.org/sources/broadcom-wl-4.150.10.5.tar.bz2[A]0;root@legacy: ~/installsroot@legacy:~/installs# echo "http://ubuntuforums.org/showthread.php?t=2039020" >[2P>readme.txt[A]0;root@legacy: ~/installsroot@legacy:~/installs# [K
+[K[A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[Cls
+[0m[01;31mbcmwl-kernel-source_6.30.223.30+bdcom-0ubuntu1_amd64.deb[0m  [01;34minternal_wireless[0m
+[01;34mbroadcom-wl-4.150.10.5[0m                                    readme.txt
+[01;31mbroadcom-wl-4.150.10.5.tar.bz2[0m                            scritp.log
+[01;34mfortplink[0m                                                 wl_apsta-3.130.20.0.o
+]0;root@legacy: ~/installsroot@legacy:~/installs# mc [K[K[Kmv scritp.log readme.txt broadcom-wl-4.150.10.5.tar.bz2  bcmwl-kernel-source_6.30.223.30+bdcom-0ubuntu1_amd64.deb broadcom-wl-4.150.10.5  fortplink [K[K[K[K[K[K[K[K[K[Kwl_apsta-3.130.20.0.o internal_wireless
+]0;root@legacy: ~/installsroot@legacy:~/installs# cd internal_wireless
+]0;root@legacy: ~/installs/internal_wirelessroot@legacy:~/installs/internal_wireless# ls -ltr
+total 6200
+drwxr-xr-x 5 1102 1102    4096 Jan  6  2008 [0m[01;34mbroadcom-wl-4.150.10.5[0m
+-rw-r--r-- 1 root root 3888794 Dec 21  2011 [01;31mbroadcom-wl-4.150.10.5.tar.bz2[0m
+-rw-r--r-- 1 root root  652866 Aug 23  2012 wl_apsta-3.130.20.0.o
+-rw-rw-r-- 1 hib  hib  1780030 Jun 21  2013 [01;31mbcmwl-kernel-source_6.30.223.30+bdcom-0ubuntu1_amd64.deb[0m
+-rw-r--r-- 1 root root   12288 Apr 19 01:54 scritp.log
+-rw-r--r-- 1 root root      49 Apr 19 01:54 readme.txt
+]0;root@legacy: ~/installs/internal_wirelessroot@legacy:~/installs/internal_wireless# ls -ltr
+total 6200
+drwxr-xr-x 5 1102 1102    4096 Jan  6  2008 [0m[01;34mbroadcom-wl-4.150.10.5[0m
+-rw-r--r-- 1 root root 3888794 Dec 21  2011 [01;31mbroadcom-wl-4.150.10.5.tar.bz2[0m
+-rw-r--r-- 1 root root  652866 Aug 23  2012 wl_apsta-3.130.20.0.o
+-rw-rw-r-- 1 hib  hib  1780030 Jun 21  2013 [01;31mbcmwl-kernel-source_6.30.223.30+bdcom-0ubuntu1_amd64.deb[0m
+-rw-r--r-- 1 root root   12288 Apr 19 01:54 scritp.log
+-rw-r--r-- 1 root root      49 Apr 19 01:54 readme.txt
+]0;root@legacy: ~/installs/internal_wirelessroot@legacy:~/installs/internal_wireless# exit
+
+Script done on Sat 19 Apr 2014 01:55:49 AM PDT

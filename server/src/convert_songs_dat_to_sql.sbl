@@ -1,0 +1,207 @@
+
+
+
+
+* this just extracts the source text.  It captures the log info for posterity
+* it expects the domain name
+* sbl convert_sr_error_log_into_sql.sbl </tmp/l | fieldu 1 |mysql -u hib -s sr
+* bash get_all_sr_error_log | tee original_error_log.2018_03_21 | sbl convert_sr_error_log_into_sql.sbl | fieldu 1 | mysql -u hib -s sr
+*
+
+	the_station_name = host(0)
+	the_station_name '-u ' = ''
+		
+        &anchor = 0
+
+        word = span('abcdefghijklmnopqrstuvwxyz')
+
+        all_but_vertical_bar = &alphabet
+        all_but_vertical_bar '|' = ''
+        xword = ( span(all_but_vertical_bar) | '' )
+        acode = 'sd' | 'cd'
+        number = span('0123456789')
+        ip_address = ( number '.' number '.' number '.' number ) | ''
+        unix_time = number
+        bar = '|'
+        position = number
+        session = xword
+        extra1 = xword
+        extra2 = xword
+
+*        good_line = xword . the_filename '|' xword . the_unescaped_filename '|' xword . the_length '|' xword . upc
+*+               '|' xword . the_featured_artist '|' xword . the_sound_recording_title '|' xword . the_isrc '|' xword . the_album_title '|' xword . the_marketing_label '|'
+*+		 xword . the_track '|' xword . the_title '|' xword . the_year '|'  xword . the_genre '|' xword . the_extra1  '|' xword . the_extra2 '|' 
+*+ xword . the_picture '|' xword . the_picture_ipc 
+*+     '|' xword . the_picture_width '|' xword . the_picture_height '|' xword . the_sha256 '|'
+
+        good_line = xword . the_filename '|' xword . the_unescaped_filename '|' xword . the_length '|' xword . upc
++               '|' xword . the_featured_artist '|' xword . the_sound_recording_title '|' xword . the_isrc '|' xword . the_album_title '|' xword . the_marketing_label '|'
++		 xword . the_track '|' xword . the_title '|' xword . the_year '|'  xword . the_genre 
++'|' xword . the_extra1  '|' xword . the_extra2 '|' 
++  ( ( arbno(any(&alphabet)) '|' ) | '' ) xword . the_sha256 '|' rpos(0)
+
+        define('q(xin)') :(done_q)
+q       &anchor = 0
+	ident(xin,'') :s(qnull)
+ql0	xin "\\" = "fdsjkfslddsjkl" :s(ql0)
+ql1	xin "\'" = 'hsfdakfahfiue' :s(ql1)
+ql2	xin "'" = 'hsfdakfahfiue' :s(ql2)
+ql3	xin 'hsfdakfahfiue' = "''" :s(ql3)
+ql4	xin "\" rpos(0) = ''   :s(ql4)
+ql5 	xin "fdsjkfslddsjkl" = "\\"	:s(ql5)
+	&anchor = 1
+	q = "'" xin "'"
+        :(return)
+qnull	q = 'NULL'
+	:(return)
+done_q
+
+        define('r(xin)') :(done_r)
+r       ident(xin,'') :s(rnull)
+	r = xin
+        :(return)
+rnull
+	r = 'NULL'
+        :(return)
+	
+done_r
+
+
+
+
+	define('count_fields(x)line_number,field_count,last_field,empty_field')	:(done_count_fields)
+count_fields
+       line_number = 0
+
+        line_number = line_number + 1
+        field_count = 0
+	shacode = ''
+cfloop1
+        ident(x,'')     :s(cfdone1)
+        x break('|') . last_field '|' = ''      :s(cfmatched_field)
+        x '|' '' . last_field = '' :s(cfmatched_field_empty)
+        x arbno(any(&alphabet)) . last_field rpos(0)    :s(cfmatched_field_no_close)
+        :(cfmatched_error)
+
+cfmatched_field
+        ident(last_field,'')    :s(cfmatched_field_empty)
+        empty_field = 'n'
+cfnext1   field_count = field_count + 1
+        :(cfloop1)
+
+cfmatched_field_empty
+        empty_field = 'y'
+        :(cfnext1)
+
+cfmatched_field_no_close
+        ident(last_field,'')    :s(cfdone1)
+        empty_field = 'nc'
+        :(cfdone1)
+
+
+cfdone1 
+	ident(last_field,'')	:s(cfdone2)
+	shacode = last_field
+cfdone2
+	count_fields = field_count :(return)
+done_count_fields
+
+        &anchor = 1
+	prev_start_unix_time = ''
+	prev_filename = ''
+	output = 'SET SESSION character_set_client = latin1;'
+	output = 'SET SESSION character_set_results = latin1;'
+	output = 'SET SESSION collation_connection = latin1_swedish_ci;'
+
+        output = '/*00*/insert into sr_stations(station_name) select ' q(the_station_name) ' where not exists (select 1 from sr_stations where station_name = ' q(the_station_name) ');'
+	jj = 1
+loop  
+*  terminal = jj
+	jj = jj + 1
+	x = input       :f(endd)
+	cf = count_fields(x)
+*	terminal = 'cf ' cf 'sghacode ' shacode
+cfll	
+	lt(cf,19)  :f(cfalmost)
+	x = x '|'
+	cf = cf + 1
+	:(cfll)
+	
+cfalmost	
+	lt(cf,20)  :f(cfprettygood)
+	&anchor = 0
+	x '|' rpos(0) = ''
+	&anchor = 1
+	x = x '|' shacode '|'
+cfprettygood
+        x good_line     :f(not_good)
+
+
+* insert sr_stations
+
+* sr_radio_plays
+	ident(the_sha256,'')	:s(no_sha256_now)
+
+	output = '/*01*/insert into sr_hash_codes(sha256,description) select ' q(the_sha256) ',' q(station_name ':' unescaped_filename) ' where not exists (select 1 from sr_hash_codes  where sha256 = ' q(the_sha256) ');'
+	
+	output = '/*02*/insert into sr_hash_code_links(sha256,table_name,column_name) select ' q(the_sha256) ',' q('sr_song_info') ',' q('sha256') 'where not exists (select 1 from sr_hash_code_links where sha256 = '
++		q(the_sha256) ' and table_name = ' q('sr_song_info')  ' and column_name = '  q('sha256') ');'
+
+
+*	output = '/*03*/insert into sr_song_info(station_name,filename,unescaped_filename,length,ean,featured_artist,sound_recording_title,isrc,album_title,marketing_label,'
+*+		'track,title,year,genre,extra1,extra2,picture,picture_ipc,picture_width,picture_height,sha256) select '
+*+        q(the_station_name) ','  q(the_filename) ',' q(the_unescaped_filename) ',' q(the_length) ',' q(upc) ',' q(the_featured_artist) ',' q(the_sound_recording_title)  ','
+*+	  q(the_isrc) ',' q(the_album_title) ',' q(the_marketing_label) ','
+*+	 q(the_track)  ',' q(the_title) ',' q(the_year) ',' q(the_genre) ',' q(the_extra1) ',' q(the_extra2) ',' q(the_picture) ',' q(the_picture_ipc) ','
+*+ q(the_picture_width) ',' q(the_picture_height) ',' q(the_sha256)
+*+ ' where not exists (select 1 from sr_song_info where station_name = ' q(the_station_name) ' and filename = ' q(the_filename) ');'
+
+no_sha256_now
+
+
+	output = '/*03*/update sr_song_info'
++		' set length=ifnull(length,' q(the_length) '),'
++                        'ean = ifnull(ean,' q(upc) '),'
++			'featured_artist = ifnull(featured_artist,' q(the_featured_artist) '),'
++			'sound_recording_title = ifnull(sound_recording_title,' q(the_sound_recording_title) '),'
++		        'isrc = ifnull(isrc,' q(the_isrc) '),'
++                       'album_title = ifnull(album_title, ' q(the_album_title) '),'
++                       'marketing_label = ifnull(marketing_label,' q(the_marketing_label) '),'
++                       'track = ifnull(track,' q(the_track) '),'
++			'title = ifnull(title,' q(the_album_title) '),'
++			'year = ifnull(year,' q(the_year) '),'
++                       'genre = ifnull(genre,' q(the_genre) '),'
++			'sha256 = ifnull(sha256,' q(the_sha256) ')'
++ ' where station_name = ' q(the_station_name) ' and filename = ' q(the_filename) ';'
+
+	output = '/*04*/insert into sr_song_info(station_name,filename,unescaped_filename,length,ean,featured_artist,sound_recording_title,isrc,album_title,marketing_label,'
++		'track,title,year,genre,extra1,extra2,sha256) select '
++        q(the_station_name) ','  q(the_filename) ',' q(the_unescaped_filename) ',' q(the_length) ',' q(upc) ',' q(the_featured_artist) ',' q(the_sound_recording_title)  ','
++	  q(the_isrc) ',' q(the_album_title) ',' q(the_marketing_label) ','
++	 q(the_track)  ',' q(the_title) ',' q(the_year) ',' q(the_genre) ',' q(the_extra1) ',' q(the_extra2) ',' 
++ q(the_sha256)
++ ' where not exists (select 1 from sr_song_info where station_name = ' q(the_station_name) ' and filename = ' q(the_filename) ');'
+
+        :(loop)
+
+
+not_good
+	terminal = 'not good ' x
+	:(loop)
+
+endd
+end
+
+
+
+
+
+
+*sr000.silentradiance.com|sm|1516297374.706250|107.000000|mplayer './hib/yellow_submarine.wav'||||||||||||
+*sr000.silentradiance.com|fm|1516297476.382636|0.000000|mplayer './hib/yellow_submarine.wav'||||||||||||
+*sr000.silentradiance.com|sm|1516297476.382636|7.000000|mplayer './hib/technical_math.wav'||||||||||||
+*sr000.silentradiance.com|fm|1516297520.669557|8.000000|mplayer './hib/right_back_goldfish.wav'||||||||||||
+*sr000.silentradiance.com|sm|1516297520.669557|77.000000|mplayer './hib/bluesky.wav'||||||||||||
+*sr000.silentradiance.com|fm|1516297599.498155|0.000000|mplayer './hib/bluesky.wav'||||||||||||
+*sr000.silentradiance.com|sm|1516297599.498155|6.000000|mplayer './hib/nevertooearlyforpsytrance.wav'||||||||||||
+

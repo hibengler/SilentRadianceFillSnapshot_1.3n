@@ -1,0 +1,17 @@
+
+
+	line = ( ( '"' break('"') . the_name '"' ) | ( break(',') . the_name ) ) ',' len(2) . the_code
+	
+loop	x = input	:f(endd)
+	x line	:f(error)
+	output = 'insert into isrc_country_codes (country_code,country_name) values (' "'" the_code "'" ',' "'" the_name "'" ');'
+	:(loop)
+	
+	
+	
+error	terminal = 'error: ' x
+	:(loop)
+	
+	
+endd
+end

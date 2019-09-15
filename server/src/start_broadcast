@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# $Revision: 1.2 $
+# Usage: start_broadcast domain_name
+export DOMAIN_NAME=$1
+while :; do music_broadcast STREAM_SR00 ok | 
+  upload_to_server https://$DOMAIN_NAME/upload.pl; done

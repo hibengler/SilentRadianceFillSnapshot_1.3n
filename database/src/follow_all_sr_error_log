@@ -1,0 +1,15 @@
+#!/bin/bash
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export APACHE_LOG_DIR="${APACHE_LOG_DIR:-/var/log/apache2}"
+export SR_LOG_DIR="${SR_LOG_DIR:-/var/log/sr}"
+cd $APACHE_LOG_DIR
+
+
+{
+follow_one_sr_error_log ssl_ds_error.log ds.silentradiance.com &
+follow_one_sr_error_log ssl_pt_error.log pt.silentradiance.com &
+follow_one_sr_error_log ssl_hm_error.log hm.silentradiance.com &
+follow_one_sr_error_log ssl_sr000_error.log sr000.silentradiance.com &
+}
+
+wait

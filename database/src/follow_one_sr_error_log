@@ -1,0 +1,14 @@
+#!/bin/bash
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export APACHE_LOG_DIR="${APACHE_LOG_DIR:-/var/log/apache2}"
+export SR_LOG_DIR="${SR_LOG_DIR:-/var/log/sr}"
+cd $APACHE_LOG_DIR
+tail -f --retry --follow=name -q "$1" | 
+   sbl $SR_BIN/filter_sr_error_log.sbl -u "$2" | 
+       sbl $SR_BIN/convert_sr_error_log_into_sql.sbl | 
+        tee -a  $SR_LOG_DIR/`date +%Y%m%d`$1 |       
+       mysql -s -h dtb.silentradiance.com -u station_multicaster sr
+
+
+
+#     tee -a  $SR_LOG_DIR/`date +%Y%m%d`$1  | 

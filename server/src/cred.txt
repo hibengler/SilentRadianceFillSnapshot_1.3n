@@ -1,0 +1,33 @@
+gpg --gen-key
+	select
+4
+	which is RSA sign only
+	keysize:
+2048
+	valid length
+5y
+	correct?
+y
+	Real Name:
+DJ Auto
+	Email Address:
+<blank>
+	Comment:
+<blank>
+	...
+O
+	passphrase:
+
+
+
+gpg --armor --export "DJ Auto" >>cred_database.txt
+
+arp -a -n -i wlan0 | awk -F '(' '{print $2}'| awk -F ')' '{print $1}'
+ 
+
+
+
+To test:
+
+perl cred.pl "DJ Auto" "test" "hib"
+ 

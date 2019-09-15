@@ -1,0 +1,47 @@
+* this just extracts the source text.  It captures the log info for posterity
+* it expects the domain name
+
+	website = host(0)
+	website '-u ' = ''
+
+	&anchor = 0
+	
+	word = span('abcdefghijklmnopqrstuvwxyz')
+	
+	acode = 'sd' | 'cd'
+	number = span('0123456789')
+	ip_address = ( number '.' number '.' number '.' number ) | ''
+	unix_time = number
+	bar = '|'
+	position = number
+	session = break('|')
+	extra1 = break('|')
+	extra2 = break('|')
+	
+	good_line = break('|') ( '|' acode . the_code '|' ip_address . the_ip_address '|' unix_time . the_unix_time '|' position . the_position '|' session . the_session '|' extra1 . the_extra1 '|' extra2 . the_extra2 '|' ) . the_good_1
++		arb ( ( ': ' arb . the_command ) | ( '' . the_command ) ) 
++		 ( ( ', referer: ' span(&alphabet) . the_referer ) | ( '' . the_referer ) )  rpos(0)
+
+	&anchor = 1
+	
+loop	x = input	:f(endd)
+	x good_line 	:f(loop)
+	&anchor = 0
+ll	the_command '|' = '' :s(ll)
+ll2	the_referer '|' = '' :s(ll2)
+	&anchor = 1
+	output = website the_good_1 the_command '|' the_referer '|' '|' '|' '|' '|' '|' '|' '|' '|' '|' '|' 
+	:(loop)
+	
+endd
+end
+
+
+
+*[Mon Mar 19 06:12:17.245475 2018] [cgi:error] [pid 57867] [client 24.4.35.231:55688] AH01215: |cd|24.4.35.231|1521465137|2649001984|z1jgkvpuzadbuajwhzlst|||: /var/www/pt.silentradiance.com/download7.cgi, referer: https://pt.silentradiance.com/receiver.html
+*[Mon Mar 19 06:12:27.082159 2018] [cgi:error] [pid 57867] [client 24.4.35.231:55688] AH01215: |cd|24.4.35.231|1521465147|2649337856|z1jgkvpuzadbuajwhzlst|||: /var/www/pt.silentradiance.com/download7.cgi, referer: https://pt.silentradiance.com/receiver.html
+*[Mon Mar 19 06:12:37.132272 2018] [cgi:error] [pid 57746] [client 24.4.35.231:55922] AH01215: |sd|24.4.35.231|1521465157|2649645056|pqga2chiv3jdeelgiubm|||: /var/www/pt.silentradiance.com/download7.cgi, referer: https://pt.silentradiance.com/receiver.html
+*[Mon Mar 19 06:14:33.995157 2018] [cgi:error] [pid 57745] [client 24.4.35.231:56864] AH01215: |sd|24.4.35.231|1521465273|2653601792|eikpyguzst2aynxrmcpzz|||: /var/www/pt.silentradiance.com/download7.cgi, referer: https://pt.silentradiance.com/receiver.html
+*[Mon Mar 19 06:14:36.658464 2018] [cgi:error] [pid 57746] [client 24.4.35.231:56884] AH01215: |sd|24.4.35.231|1521465276|2653691904|ejstk12rifyc3hajrikmw|||: /var/www/pt.silentradiance.com/download7.cgi, referer: https://pt.silentradiance.com/receiver.html
+*[Mon Mar 19 06:14:46.232780 2018] [cgi:error] [pid 57746] [client 24.4.35.231:56884] AH01215: |cd|24.4.35.231|1521465286|2654040064|ejstk12rifyc3hajrikmw|||: /var/www/pt.silentradiance.com/download7.cgi, referer: https://pt.silentradiance.com/receiver.html
+

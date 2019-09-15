@@ -1,0 +1,140 @@
+Broadcom Corporation BCM4311 802.11b/g WLAN [14e4:4311] (rev 01)
+
+
+
+Gemtek WMIB-160GW. FCC approval date: 09 December 2004. Interface: Mini PCI. FCC ID: QDS-BRCM1016 Industry Canada ID: 4324A- ...
+
+Gateway M6000 series
+
+
+
+should work with the MT series - for the AMD chipset:
+Gentek WMIB-184GW 802.11b/g MiniPCI-Express Adapter 
+
+Gateway:
+
+MT3303j
+MT3304j
+MT3305j
+MT3418
+MT3419
+MT3421
+MT3422
+MT3423
+MX3210MX3212
+MX3215
+MX3220b
+MX3222b
+MX3225
+MX3228
+MX3228h
+MX3230
+MX3230h
+MX3231
+MX3235m
+MX3311b
+MX3410
+MX3412
+MX3414
+MX3416
+MX3417
+MX3422
+MX3558
+MX3558h
+MX3560
+MX3562
+MX3563
+MX3563h
+
+
+
+Such as 
+MT6451
+MT6452
+MT6456
+MT6457
+MT6458
+MT6459
+MT6460
+
+
+Using the MA2 chasis
+MX6410m
+MX6420
+MX6421
+MX6422
+MX6423
+MX6424
+MX6424h
+MX6425
+MX6426
+MX6427
+MX6428
+MX6429
+MX6430
+MX6431
+MX6433
+MX6436
+MX6437
+MX6438
+MX6439
+MX6440
+MX6440h
+MX6441
+MX6442
+MX6444
+MX6444h
+MX6445
+MX6446
+MX6447
+MX6448
+MX6450
+MX6452
+MX6453
+MX6454
+MX6455
+
+MX7118
+MX7120
+MX7122
+MX7515
+MX7515h
+MX7517i
+MX7519j
+MX7520
+MX7520h
+MX7525
+MX7527
+MX7533
+
+
+Amd turion lancaster in msx6000
+mx7000 has amd Newark - much faster - dont know if single or dual core.
+
+
+Acer aspire 5517 - NOPE
+
+hp compaq nx6325 - TOO SLOW!!!
+
+
+
+All of these above have (I think) BCM4311
+
+Others - 
+BCM4311 - for dell inspiron! HP apple Dell XPS M1710 DW1490 D620 D630 
+BCM4306/3 ???
+BCM4312 dell levono hp
+BCM4318  hp nc6000 nc4200
+BCM4306/3
+Some BCM4322 hp/ + wifi card
+BCM43222 apple
+BCM43224 wifi/apple/dell
+BCM43225 ibm/hp/lenovo
+BCM43227 lenovo
+BCM43228 dell dw1530 or hp 2570p or lenovo or pci-e desktop!!!!!
+BCM43217
+BCM43131
+BCM43224 card - including macbook air
+BCM43225 - laptop card
+
+

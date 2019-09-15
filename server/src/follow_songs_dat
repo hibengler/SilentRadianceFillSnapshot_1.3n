@@ -1,0 +1,19 @@
+#!/bin/bash
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+#export APACHE_LOG_DIR="${APACHE_LOG_DIR:-/var/log/apache2}"
+#export SR_LOG_DIR="${SR_LOG_DIR:-/var/log/sr}"
+#cd $APACHE_LOG_DIR
+
+
+if [ $# -ne 1 ]; then
+  echo 2>&1 "Usage: $0 <station_name> where <station_name> is something like ds.silentradiance.com"
+  exit 2
+fi
+
+#export MIDFILE=$SR_LOG_DIR/all_`date +%y%m%d`.gz
+
+
+#get_all_sr_error_log | gzip >$MIDFILE
+
+tail -n 40 -f --retry --follow=name -q songs.dat | sbl $SR_BIN/convert_songs_dat_to_sql.sbl -u $1 | mysql -s -h dtb.silentradiance.com -u station_recorder sr
+

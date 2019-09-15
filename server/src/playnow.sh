@@ -1,0 +1,75 @@
+#/bin/bash
+# $Revision: 1.16 $
+echo "Playing for $SR_DOMAIN_SERVER"
+echo "playnow.sh directory $PWD"
+echo "best to do redo_all_songs_dat $SR_DOMAIN_SERVER and"
+echo "redo_playlist_log $SR_DOMAIN_SERVER &    "
+echo ""
+
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+
+while :
+do
+{
+# echo "making a randomized playlist"
+ find . -follow -name '*.wav'
+ find . -follow -name '*.flac'
+ find . -follow -name '*.shnf'
+ find . -follow -name '*.ogg'
+ find . -follow -name '*.mp3' 
+ find . -follow -name '*.m4a' 
+} | randomize  `date +%m%s` | sed s/\'/\'\\\\\'\'/g |
+  awk '{print "srplayer '\''" $0 "'\''" }' >playlist.txt
+  if [ -s playlist.txt ] 
+  then
+    cp playlist.txt playlist_`date +%Y%m%d%H%M%s`.ptxt
+    ~/src/one_step_ahead playlist.txt 2>>playlist.log
+  else
+    echo "empty playlist"
+    echo "  probably should restart the mounted filesystem, if there is one"
+    echo "  sleeping for one minute...."
+    sleep 60
+    echo "  wakeup now"
+    echo ""
+  fi
+done
+
+# $Log: playnow.sh,v $
+# Revision 1.16  2019/09/01 00:25:11  hib
+# fix for guess info
+#
+# Revision 1.15  2019/06/01 22:21:41  hib
+# reverse login
+#
+# Revision 1.14  2019/06/01 22:19:40  hib
+# wip
+#
+# Revision 1.13  2019/06/01 22:10:52  hib
+# made playlist.sh slow down if the playlist is empty.
+#
+# Revision 1.12  2019/05/17 23:23:36  hib
+# Adding support for a new song provider: Kim. Also made it print out the server name so we don't get confused.
+#
+# Revision 1.11  2018/12/12 13:43:23  hib
+# wip - cleaning up radio auto play
+#
+# Revision 1.10  2018/12/01 16:27:01  hib
+# fixing radio servers to show song name
+#
+# Revision 1.9  2018/10/31 02:57:23  hib
+# k
+#
+# Revision 1.8  2018/10/31 02:48:27  hib
+# Set up sr000 for full and incremental logging
+#
+# Revision 1.7  2018/07/22 00:10:28  hib
+# cleanup on money server
+#
+# Revision 1.6  2018/03/29 00:48:13  hib
+# Getting the greatful dead tapes set up
+#
+# Revision 1.5  2018/03/17 08:17:58  hib
+# playnow - minor.
+# upload_to_server - got this to upload only one file at a time. It will start the next file
+# early so that it is there in time.
+#

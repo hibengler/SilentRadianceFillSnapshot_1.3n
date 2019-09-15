@@ -1,0 +1,90 @@
+* This is used to filter statistics and figure out how many times youtube to our link.
+* called by gather_acuerdo_stats.sh
+	numerical = '0123456789'
+	span_numerical = span(numerical)
+	ip_address = span_numerical '.' span_numerical '.' span_numerical '.' span_numerical
+	s = ' '
+	field_1 = break(' ')
+	field_2 = break(' ')
+	day = span_numerical
+	month = 'Jan' | 'Feb' | 'Mar' | 'Apr' | 'May' | 'Jun' | 'Jul' | 'Aug' | 'Sep' | 'Oct' | 'Nov' | 'Dec'
+	number_of_month = table()
+	number_of_month['Jan'] = '01'
+	number_of_month['Feb'] = '02'
+	number_of_month['Mar'] = '03'
+	number_of_month['Apr'] = '04'
+	number_of_month['May'] = '05'
+	number_of_month['Jun'] = '06'
+	number_of_month['Jul'] = '07'
+	number_of_month['Aug'] = '08'
+	number_of_month['Sep'] = '09'
+	number_of_month['Oct'] = '10'
+	number_of_month['Nov'] = '11'
+	number_of_month['Dec'] = '12'
+	
+	year = span_numerical
+	hour = span_numerical
+	minute = span_numerical
+	second = span_numerical
+	timezone = span('-1234567890')
+	date_field = '[' day . the_day '/' month . the_month  '/' year . the_year ':' hour . the_hour
++			':' minute . the_minute ':' second . the_second s timezone . the_timezone ']'
+
+
+	command = 'GET' | 'POST' | 'PUT'
+	format = 'HTTP/' span_numerical '.' span_numerical
+	uri = break(' "')
+	call_uri2 = '"' command . the_command s  ( uri | '' ) . the_uri  s format . the_format '"'
+	call_uri = '"' command . the_command s  ( uri | '' ) . the_uri  s format . the_format '"'
+	result_code = span_numerical . the_result_code
+	bytes_sent = span_numerical . the_bytes_sent
+	referer = '"' ( uri | '' ) . the_referer '"'
+	browser_info = '"' (break('"') | '' ) . the_browser_info  '"'
+	
+	
+
+	access_line = ip_address . the_ip_address s field_1 . the_field_1 s field_2 . the_field2 s
++	    date_field . the_date_field 
++	    s call_uri . the_call_uri  
++	    s result_code s bytes_sent s referer s browser_info rpos(0)
+
+loop	&anchor = 1
+	x = input	:f(done)
+	the_uri = ''
+	the_ip_address = ''
+	the_referer = ''
+	the_month = ''
+	the_year = ''
+	the_day = ''
+	the_hour = ''
+	the_minute = ''
+	the_second = ''
+	
+	x access_line 	:f(error_access)
+	&anchor = 0	
+	the_uri  ( '?' | '&' ) 'c=' '92026' ( '&' | rpos(0) )  :f(loop)
+	the_uri  ( '?' | '&' ) 't=buynow'   ( '&' | rpos(0) )   :f(loop)
+	from_youtube = 0
+
+	the_referer 'youtube.com' ( '/' | rpos(0) ) :f(not_youtube)
+	
+	from_youtube = 1
+
+not_youtube
+	output = the_year '/' number_of_month[the_month] '/' the_day ':' the_hour ':' the_minute ':' the_second ':' '	'
++		the_ip_address '	'	from_youtube
+	:(loop)
+
+error_access
+	terminal = 'error access line: ' x
+	:(loop)
+
+done
+
+
+
+
+
+
+
+end

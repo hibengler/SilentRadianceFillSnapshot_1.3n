@@ -1,0 +1,23 @@
+# add to vendor_youtuve_video_url
+'./Prime_Records/pricd001-Various-Los_Gladiators/01 - Drakote and Chezina - Xplozion.wav'|
+'./Prime_Records/pricd001-Various-Los_Gladiators/03 - El Drakote - Mal de Amores Explicit.wav'|
+'./Prime_Records/pricd001-Various-Los_Gladiators/2 Farruko Ft. Benny Benni La Caza Bichotes.wav'|
+'./Prime_Records/pricd002-Falo-Ritmo_Professional_Explicit/01 - Falo - Pal Cruse.wav'|
+'./Prime_Records/pricd003-DJ_Negro_and_Vico_C-La_Recta_Final/01 - DJ Negro and Vico C - La Recta Final.wav'|https://www.youtube.com/watch?v=V7lopGXXtR8
+'./Prime_Records/pricd004-Various-Prime_Underground_3_Explicit/02 - Nana Ya Llego - La Nana.wav'|https://www.youtube.com/watch?v=fj6xjIO5ag0
+'./Prime_Records/pricd004-Various-Prime_Underground_3_Explicit/04 - Falo and Bam Bam - Extra.wav'|
+'./Prime_Records/pricd005-Vico_C-Greatest_Hits_Explicit/02 - Vico C - Viernes 13.wav'|https://www.youtube.com/watch?v=iFn6RS3Pxy4
+'./Prime_Records/pricd005-Vico_C-Greatest_Hits_Explicit/03 - Vico C - Mundo Artificial.wav'|https://www.youtube.com/watch?v=U2QzgybRfe8
+'./Prime_Records/pricd005-Vico_C-Greatest_Hits_Explicit/05 - Vico C - La Inglesa.wav'|https://www.youtube.com/watch?v=QW3KBWvMm34
+'./Prime_Records/pricd005-Vico_C-Greatest_Hits_Explicit/06 - Vico C - Xplosion.wav'|https://www.youtube.com/watch?v=BrArIQb-PXo
+'./Prime_Records/pricd005-Vico_C-Greatest_Hits_Explicit/07 - Vico C - Saborealo.wav'|
+'./Prime_Records/pricd005-Vico_C-Greatest_Hits_Explicit/08 - Vico C - Maria.wav'|
+'./Prime_Records/pricd005-Vico_C-Greatest_Hits_Explicit/09 - Vico C - Cut it Up Baron (Long Version).wav'|
+'./Prime_Records/pricd006-Kid_Power_Posse-La_Medicina_Explicit/05 - Kid Power Posse - Medicina.wav'|
+'./Prime_Records/pricd006-Kid_Power_Posse-La_Medicina_Explicit/06 - Kid Power Posse - El Gordo.wav'|
+'./Prime_Records/pricd007-El_General-Estas_Buena_Explicit/05 - El General - Te Ves Buena.wav'|
+'./Prime_Records/pricd007-El_General-Estas_Buena_Explicit/06 - El General - Pu Tun Tun.wav'|https://www.youtube.com/watch?v=SB2M2N5Ynps
+'./Prime_Records/pricd008-Lisa_M-No_Lo_Derrumbes/05 - Lisa M - Tu Pum Pum.wav'|
+'./Prime_Records/pricd009-Falo-Colecta/07 - Falo - Colecta.wav'|
+'./Prime_Records/pricd010-Various-Prime_Underground_1_Explicit/08 - Baby J - Me Dizzen.wav'|https://www.youtube.com/watch?v=Mq03x5u6rzM
+

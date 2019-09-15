@@ -1,0 +1,533 @@
+$Revision: 1.54 $
+
+# Installed on
+macbook pro 17 inch 2012 - Broadcom Corporation BCM43224 802.11a/b/g/n [14e4:4353] (rev 01) bcm43224 did not work real bad no AP
+acer triple core 5???  Broadcom Corporation BCM43225 802.11b/g/n [14e4:4357] (rev 01)  - bcm43225 did not work - got AP but cant do 2 mhz.
+4312 replacement of 43225 - worked.
+4318 - worked?
+
+/*vvv special for refresh
+cd ~/opencvs
+cvs co SilentRadiance
+
+sudo apt install gtkhash m4 git flac id3tool
+
+cd ~/opencvs/SilentRadiance/linux/other
+#wget http://www.kevinboone.net/gettags.tar.gz
+#tar -xzvf gettags.tar.gz
+cd gettags
+#edit Makefile
+#CFLAGS - add -DO_BINARY=0
+# note - CFLAGS is in makefile twice
+make
+sudo make install
+
+cd ~/opencvs/SilentRadiance/linux/server/src
+make
+sudo make install
+
+cd ~/sr/
+find . -name '*.ptxt' -size 0 -exec rm -rf {} ';'
+#^^^ special for refresh of radio content generators*/
+
+# need to run on reggaeton, gd, ds, and hm!*!*!*!*
+# ^^^^^ ----
+
+
+
+
+
+Now this install is being used for bot transmitting stations and for web transmitters. They might be slightly different.
+
+
+
+
+
+sudo apt install gtkhash m4 git flac id3tool
+
+Installation for linux server
+
+sudo mkdir /var/log/sr
+sudo mkdir /var/log/sr/reports
+sudo chown -R z /var/log/sr
+
+sudo apt-get install xautomation
+sudo apt install xinput
+
+
+
+
+# now we report back to the database
+sudo apt install mariadb-client
+
+# for 18.04:
+sudo apt install cvs make gcc 
+
+cd
+mkdir opencvs
+cd opencvs
+export CVSROOT=hib@open.killercool.com:/opencvs
+cvs co .
+  
+sudo apt install gtkhash m4 git
+sudo apt-get install flac id3tool
+  
+   
+cd ~/opencvs/SilentRadiance/linux/other
+#wget http://www.kevinboone.net/gettags.tar.gz
+tar -xzvf gettags.tar.gz
+cd gettags   
+edit Makefile
+CFLAGS - add -DO_BINARY=0
+# note - CFLAGS is in makefile twice
+make
+sudo make install
+    
+      
+
+
+cd ../../linux/server/src
+ln -s ../../other .
+
+junk vvvvvvvvvvvvvvvvvvvvv
+# note - for web server : take out
+cd /etc/apache2/
+rm mods*/reqtimeout.conf mods*/reqtimeout.load
+# reqtimeout.conf reqtimeout.load
+# also have .htaccess hold
+RemoveInputFilter pl .pl
+RemoveOutputFilter pl .pl
+junk ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 
+
+
+
+To install xubuntu 16.04 fresh: - user z with autologin
+
+apt-get update
+apt-get upgrade
+
+# all of these are for bpgenc
+sudo apt-get install -y zlib1g-dev libjpeg-dev \
+cmake yasm g++ curl libcurl4-openssl-dev libsdl2-2.0 \
+     libsdl2-dev pavucontrol
+#sudo apt install  libcurl4-gnutls-dev
+
+
+#18.04???
+
+#16.04:
+sudo apt-get install -y libpng12-dev
+
+#18.04:
+sudo apt-get install -y libpng-dev
+
+sudo apt-get install -y libsdl-gfx1.2-dev libsdl1.2-dev libsdl-image1.2-dev 
+
+
+sudo apt-get install ntp 
+sudo apt-get install ntpstat 
+#sudo apt-get install chrony 
+sudo timedatectl set-ntp no
+timedatectl
+ntpq -p
+#in the firewall - options ntpq 64.13.145.225
+
+
+sudo cpan
+install Digest::SHA
+exit
+
+
+sudo apt-get install -y mplayer
+sudo apt-get install -y libid3-tools
+# ^^^ id3info
+
+
+# vvv for wifi broadcaster 
+sudo apt-get install -y hostapd
+sudo apt-get install -y isc-dhcp-server
+sudo apt-get install -y wireless-tools
+
+#set_mcast_rate
+#wicd?
+
+# ^^^ for wifi broadcaster 
+
+
+
+
+
+
+sudo apt-get install -y libasound2-dev aubio-tools libaubio-dev libaubio-doc
+sudo apt-get install -y jack-tools  fftw3 
+#dont worry about realtime - we are just installing jack for aubio
+sudo apt-get install -y libjack-dev
+
+sudo apt-get install -y dkms
+
+
+sudo apt-get install -y libasound2-dev aubio-tools libaubio-dev libaubio-doc
+sudo apt-get install -y libavutil-dev
+sudo apt-get install -y libavutil-ffmpeg54
+
+sudo apt-get install -y libsamplerate-dev
+
+
+sudo apt-get install -y  libavresample-ffmpeg2 libavcodec-dev libavcodec-ffmpeg56 libavcodec-dev
+sudo apt-get install -y libavformat-dev 
+
+# 16.04:
+#sudo apt-get install -y libavformat-ffmpeg56 
+#sudo apt-get install -y libavformat56
+
+#18.04:
+sudo apt-get install libavcodec-extra57 libavformat57 libavutil55
+
+sudo apt-get install -y libavresample-dev 
+#16.04
+#sudo apt-get install -y libavresample-ffmpeg2 
+
+#18.04 is in libavutil55m dibe earkuet
+
+sudo apt-get install -y libavcodec-dev 
+#16.04
+#sudo apt-get install -y libavcodec
+
+#18.04
+#nothing
+
+#16,04 :
+#sudo apt-get install -y libavformat libavformat-ffmpeg
+
+#18.04:
+#nothing
+
+
+sudo apt-get install -y libsndfile-dev
+sudo apt-get install -y libssl-dev
+
+
+#16.04 Then remove all aubio packages - just need the other packates for making it
+#sudo apt-get remove  -y aubio-tools libaubio-dev libaubio-doc libaubio4 python-aubio
+
+#18.04 - no need cause aubio is higher: 0.4.5-1 on ubuntu  18.04
+#nothing
+
+
+#All this aubio was for 16.04 where there was a bug that crashed the server sometimes.
+#cd
+#mkdir installs
+#cd installs
+#wget https://aubio.org/pub/aubio-0.4.3.tar.bz2
+# tar -xjvf *2
+# cd aubio*3
+# ./waf configure  --prefix=/usr
+# ./waf build
+#sudo  ./waf install
+ 
+  
+
+edit /etc/pulse/daemon.conf - and set default-sample-rate to 48000
+reboot
+
+
+
+# vvv for wifi broadcaster 
+
+
+All of this is to get the b43 driver in, 4311 works 43225 no, 43224?
+
+
+
+vvvvvvvvvvvvvvvvvvvvvvvvvvvv - this is only for the broadcom wireless, which will broadcast faster than 1Mb/s
+Broadcomm - BCM4311:
+from 
+https://help.ubuntu.com/community/WifiDocs/Driver/bcm43xx
+
+lspci -vvnn | grep -A 9 Network 
+apt-get install -y b43-fwcutter
+apt-get install -y firmware-b43-installer
+cd 
+mkdir installs
+cd installs
+mkdir broadcom
+cd ~/installs/broadcom
+wget http://www.lwfinger.com/b43-firmware/broadcom-wl-5.100.138.tar.bz2
+tar xfvj broadcom-wl-5.100.138.tar.bz2
+wget http://downloads.openwrt.org/sources/wl_apsta-3.130.20.0.o
+sudo b43-fwcutter -w /lib/firmware wl_apsta-3.130.20.0.o
+# was broadcom-wl-4.150.10.5.tar.bz2 in case it is upward buggy
+#sudo b43-fwcutter --unsupported -w /lib/firmware broadcom-wl*/driver/wl_apsta_mimo.o
+sudo b43-fwcutter --unsupported -w /lib/firmware broadcom-wl*/driver/wl_apsta_mimo.o
+
+#well that didnt help.  But legacy has stuf fon it.
+#wget http://downloads.openwrt.org/sources...a-3.130.20.
+# 0.10.5.tar.bz2dcom-wl-4.15 
+#tar xfvj broadcom-wl-4.150.10
+# http://ubuntuforums.org/showthread.php?t=2039020
+#apt-get install b43
+
+wget https://launchpad.net/ubuntu/+source/bcmwl/6.30.223.30+bdcom-0ubuntu1
+dpkg -i bcmwl-kernel-source_6.30.223.30+bdcom-0ubuntu1_amd64.deb
+
+
+And another try
+wget https://launchpad.net/ubuntu/+archive/primary/+files/bcmwl_6.30.223.30+bdcom.orig.tar.gz
+tar -xzf bcmwl_6.30.223.30+bdcom.orig.tar.gz
+
+
+
+
+#add b43 to /etc/modules.conf
+
+
+# from https://help.ubuntu.com/community/WifiDocs/Driver/bcm43xx?action=show&redirect=BroadcomSTA%28Wireless%29
+sudo apt-get purge bcmwl-kernel-source
+
+reboot
+
+modprobe -v b43
+^^^^^^^^^^^^^^^^^^^^^^^^^^ Broadcom magic
+
+
+
+
+For BVM43225:
+tar xfvj broadcom-wl-5.100.138.tar.bz2
+sudo b43-fwcutter -w /lib/firmware broadcom-wl-5.100.138/linux/wl_apsta.o
+
+sudo modprobe -r b43 bcma
+sudo modprobe -r brcmsmac bcma
+sudo modprobe -r wl
+
+sudo modprobe b43
+
+sudo apt-get purge bcmwl-kernel-source
+
+
+
+
+
+edit /etc/default/isc-dhcp-server - set interfaces up
+Add at the bottom:
+change:
+
+INTERFACES=""
+  - to -
+INTERFACES="wlan0"
+# or whatever
+#Then - copy /etc/hostapd/hostapd1,2,3.conf
+cp -p -r ~z/opencvs/SilentRadiance/linux/server/src/hostapd_setup/* /etc/hostapd
+
+# then set up rc.local  silent0-silent3
+export SETUP=silent3
+scp -p -r ~z/opencvs/SilentRadiance/linux/server/src/auto_startup/$SETUP/rc.local  /etc/rc.local
+
+As user z:
+scp -p -r ~z/opencvs/SilentRadiance/linux/server/src ~
+
+export SETUP=silent3
+
+mkdir ~/bin
+scp -p -r ~z/opencvs/SilentRadiance/linux/server/src/auto_startup/$SETUP/z_bin/*  ~/bin
+
+
+Should start up now :
+
+/etc/rc.local
+
+
+
+# silent0 channel 1 
+# silent1 channel 4
+# silent2 channel 8
+# silent3 channel 11
+
+
+
+ edit /etc/network/interfaces
+# add
+iface wlan0 inet none
+
+# this makes it so additional wireless interfaces can be managed but wlan0 will not be from the network manager thing.
+
+
+
+# ok - now it starts up - lets add the web server so we can store the .apk
+
+apt-get install -y apache2
+chown z /var/www/html
+rm /var/www/html/index.html
+
+
+# copy the .apk into /var/www/html
+
+Server - /etc/mime.types
+application/silentradiance		sirad
+
+
+# ^^^ Broadcast laptio setup
+
+
+
+
+
+
+
+#Also - x11vnc - look at vnc-startup.sh
+#http://c-nergy.be/blog/?p=8984
+
+# note -listen localhost is for standalone servers, like rnb and country
+
+sudo apt-get install -y x11vnc -y
+sudo x11vnc -storepasswd /etc/x11vnc.pass
+
+
+sudo su 
+
+cat > /lib/systemd/system/x11vnc.service << EOF
+[Unit]
+Description=Start x11vnc at startup.
+After=multi-user.target
+[Service]
+Type=simple
+ExecStart=/usr/bin/x11vnc -auth guess -forever -loop -listen localhost -noxdamage -repeat \
+-rfbauth /etc/x11vnc.pass -rfbport 5900 -shared
+[Install]
+WantedBy=multi-user.target
+EOF
+
+exit
+# ^^^ back to normal user
+
+
+echo "Configure Services"
+sudo systemctl daemon-reload
+sudo systemctl enable x11vnc.service
+sudo systemctl start x11vnc.service
+
+# Done
+reboot
+
+#might need it on weird graphics headless installs
+sudo apt install xfce4-pulseaudio-plugin
+# note this is different than the standard Sound menu - why?
+
+auto-login as z
+cat >/etc/lightdm/lightdm.conf.d/12-autologin.conf <<EOF
+[SeatDefaults]
+autologin-user=z
+EOF
+
+ff02::1
+ipv6:
+ifconfig wlan0 inet6 add fe80::d333:a111:2344:1111
+
+sudo ./music_broadcast6 ff02::1 eth0
+
+export CVSROOT=hib@open.killercool.com:/opencvs
+z@money:~/opencvs$ cvs co SilentRadiance
+
+cd ~/opencvs/SilentRadiance/linux/server/src
+ln -s ../../other .
+
+
+sudo apt install xtightvncviewer
+
+
+cd ~/opencvs/SilentRadiance/linux/other
+bash build_opus.sh
+ bash build_wav.sh
+bash  build_libpng.sh
+#bash build_libbpg_server.sh
+
+
+
+cd ~/opencvs/SilentRadiance/linux/server/src
+make
+sudo make install
+
+ln -s src ~
+
+
+cd ~/src
+
+ while :; do ./music_broadcast STREAM_SR00 ok | ./upload_to_server  https://hm.silentradiance.com/upload.pl; done
+
+
+url is http://sr000.silentradiance.com/upload.pl
+
+
+
+
+sudo apt-get install nasm
+sudo apt-get install musl-tools
+
+cd ~/opencvs/SilentRadiance/linux/other
+git clone https://github.com/spitbol/spitbol.git
+cd spitbol
+make
+sudo make install
+
+
+# regular snobol4 is used in the server as well
+cd ~/opencvs/SilentRadiance/linux/other
+wget ftp://ftp.ultimate.com/snobol/snobol4-2.0.tar.gz
+tar -xzvf snobol4-2.0.tar.gz
+cd  snobol4-2.0
+./configure
+make
+sudo make install
+
+
+
+
+
+# for transmitter only, not for broadcaster:
+# then set up rc.local  silent0-silent3
+# as user root:
+export SETUP=radio
+scp -p -r ~z/opencvs/SilentRadiance/linux/server/src/auto_startup/radio/rc.local  /etc/rc.local
+
+As user z:
+ln -s ~z/opencvs/SilentRadiance/linux/server/src ~/src
+
+export SETUP=radio
+
+mkdir ~/bin
+scp -p -r ~z/opencvs/SilentRadiance/linux/server/src/auto_startup/$SETUP/z_bin/*  ~/bin
+cp -i ~/bin/silentradiance_config ~/.silentradiance_config
+
+edit ~/.silentradiance_config
+
+
+
+#Should start up now :
+# as root:
+/etc/rc.local
+>
+
+
+
+
+# main stroe we bserver speedup:
+make_radio_ramdisks.sh 
+# mounts ramdisks to the radio folders so that they dont go to the real disk
+# could make the system run out of memory, so we have to clear the older sirad files
+# with a cron job instead of by the perl download program
+
+# in rc.local on pt.silentradiance.com:
+/usr/local/bin/make_radio_ramdisks.sh 
+
+
+crontab -e
+1,11,21,31,41,51 * * * * * /usr/local/bin/clear_old_sirad_files.sh
+
+
+# other performance tweaks - set the ram for virtual radio senders to 1.5g without
+#virtual memory - because was dipping into vm and then doing it more and more causing
+# a cascade effect on the herd disks
+
+# hard disk usage is still kinda high on automatedmd.com (one disk only) - so need more disks.
+

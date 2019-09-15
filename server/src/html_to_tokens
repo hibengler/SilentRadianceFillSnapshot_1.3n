@@ -1,0 +1,4 @@
+#!/bin/bash
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+
+snobol4 -P 2M -S 2M -b $SR_BIN/html_to_tokens.sno "$1"

@@ -1,0 +1,13 @@
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export STATION_NAME=$1
+
+echo "select station_name,filename,unescaped_filename,ean,featured_artist,
+  album_title,marketing_label,year,genre,extra1,extra2
+ from sr_song_info
+where station_name='$STATION_NAME'
+  and cd_short_name is null
+  order by album_title,track,filename;" |
+  mysql -u automatic_maintenance -h dtb.silentradiance.com -s sr |
+ sbl $SR_BIN/build_cds_from_songs.sbl |
+  mysql -u automatic_maintenance -h dtb.silentradiance.com -s sr 
+

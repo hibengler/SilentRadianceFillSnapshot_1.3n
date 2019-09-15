@@ -1,0 +1,138 @@
+USed silentradiance_make_demo 1.7 - and turned off the sound dampening
+static int ramp_sound(short *sb,int millipoints) {
+return 0; //??? hack
+
+
+
+
+srplayer_to_sirad "larecta/larecta2019.wav" >/tmp/a.sirad
+rm a.raw*
+
+# convert larecta.png -resize 1080x1080   -gravity center -size 1920x1080 -depth 8 rgb:a.rgb
+
+convert larecta_1080x1080_centered.png  -depth 8 rgb:larecta_1080x1080_centered.rgb
+convert larecta_384_x_384_centered.png  -depth 8 rgb:larecta_384_x_384_centered.rgb
+convert larecta_384_x_384_bottomright.png -depth 8 larecta_384_x_384_bottomright.rgb
+
+
+# convert -size 1080x1080 -depth 8 rgb:a.rgb a.png
+
+rm a.raw* a0.raw*
+./silentradiance_make_demo /tmp/a.sirad 0 0  "Vico C
+La Recta Final
+2019 Remix
+Prime Records"
+
+mv a.rawrgb a0.rawrgb
+
+
+ make CFLAGS=-O3 combine_raw_vids
+ 
+cp larecta_1080x1080_centered.rgb a.rgb
+ time ./combine_raw_vids
+
+cp larecta_384_x_384_centered.rgb a.rgb
+ time ./combine_raw_vids
+ 
+cp larecta_384_x_384_bottomright.rgb a.rgb
+ time ./combine_raw_vids
+  
+
+rm 2>/dev/null a.aac a_ns.mp4 a.mp4
+avconv  -f s16le -ar 48000 -ac 2 -i a.rawsound  -c:a aac -strict experimental \
+  -bsf:a aac_adtstoasc -b:a 256k  a.aac  
+
+avconv -v debug -framerate 30 -f rawvideo -pix_fmt rgb24 -s 1920x1080 -i a.rawrgb \
+  -c:v libx264   -pix_fmt yuv420p -profile:v main -level 3.1 -movflags +faststart -crf 23 a_ns.mp4
+# tried 26  ,28
+
+avconv -y -framerate 30 -f rawvideo -pix_fmt rgb24 -s 1920x1080 -i a.rawrgb \
+  -c:v libx264  -pass 1  -pix_fmt yuv420p -preset veryslow -b:v 12000k -an -profile:v main -level 3.1 \
+  -movflags +faststart -f mp4 /dev/null
+avconv  -framerate 30 -f rawvideo -pix_fmt rgb24 -s 1920x1080 -i a.rawrgb \
+   -c:v libx264 -pass 2  -pix_fmt yuv420p -preset veryslow  -b:v 7700k -an -profile:v main -level 3.1 \
+    -movflags +faststart a_ns.mp4  
+  
+  
+  
+  
+avconv -i a_ns.mp4 -i a.aac -acodec copy  -bsf:a aac_adtstoasc -vcodec copy a.mp4
+
+avconv -i  b.mp4 -itsoffset 0.1 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a100.mp4
+avconv -i  b.mp4 -itsoffset 0.2 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a200.mp4
+avconv -i  b.mp4 -itsoffset 0.3 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a300.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a400.mp4
+avconv -i  b.mp4 -itsoffset 0.5 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a500.mp4
+avconv -i  b.mp4 -itsoffset 0.6 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a600.mp4
+avconv -i  b.mp4 -itsoffset 0.7 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a700.mp4
+avconv -i  b.mp4 -itsoffset 0.8 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a800.mp4
+avconv -i  b.mp4 -itsoffset 0.9 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a900.mp4
+avconv -i  b.mp4 -itsoffset 10 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a1000.mp4
+
+
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a310.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a320.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a330.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a340.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a350.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a360.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a370.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a380.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a390.mp4
+
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a410.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a420.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a430.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a440.mp4
+# this one vvv
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a450.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a460.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a470.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a480.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a490.mp4
+
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a510.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a520.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a530.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a540.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a550.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a560.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a570.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a580.mp4
+avconv -i  b.mp4 -itsoffset 0.4 -i b.mp4 -map 0:v -map 1:a -c copy larecta/a590.mp4
+
+rm 2>/dev/null a.ogg a.webm
+avconv  -f s16le -ar 48000 -ac 2 -i a.rawsound  -c:a libvorbis -qscale:a 7  -b:a 256k  a.ogg
+
+
+avconv -framerate 30 -f rawvideo -pix_fmt rgb24 -s 480x480 -i a.rawrgb \
+     -i a.ogg    -c:v libvpx  -b:v 1M -crf 30  -movflags +faststart -qmin 20 -qmax 30 -threads 2 \
+        -c:a copy a.webm
+
+
+ 	
+avconv  -framerate 30 -f rawvideo -pix_fmt rgb24 \
+-s 480x480 -i a.rawrgb \
+   -i a.ogg \
+    -c:v libtheora  -pix_fmt yuv420p -qscale:v 4   -movflags +faststart -c:a copy      a.ogv
+
+# a_ns.mp4 -i a.aac -acodec copy  -bsf:a aac_adtstoasc -vcodec copy a.mp4 \
+
+<html>
+<body>
+here
+<video poster="placeholder.png" id="backgroundvid" controls width=480 height=320>
+<source src="test.webm" type='video/webm; codecs="vp8.0, vorbis"'>
+<source src="test.ogv" type='video/ogg; codecs="theora, vorbis"'>
+<source src="test.mp4" type='video/mp4; codecs="avc1.4D401E, mp4a.40.2"'>
+<p>Fallback content to cover incompatibility issues</p>
+</video>
+yeah
+
+</body>
+
+
+</html>
+
+
+

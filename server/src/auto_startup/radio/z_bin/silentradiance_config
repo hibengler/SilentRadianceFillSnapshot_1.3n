@@ -1,0 +1,6 @@
+#sample silentradiance_config - should be in .silentradiance_config
+export SR_DOMAIN_SERVER=somewhere.silentradiance.com
+export SR_BIN=/usr/local/bin
+export SR_PLAYLIST=/home/z/sr/playlist1
+export MYSQL_PWD=password_for_user_station_recorder
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export SR_LOG_DIR="${SR_LOG_DIR:-/var/log/sr}"
+
+#export MIDFILE=$SR_LOG_DIR/all_playlist_`date +%y%m%d`.gz
+
+echo "select filename,unescaped_filename,length,ean,featured_artist,sound_recording_title,isrc,album_title,marketing_label,track,title,year,genre,extra1,
+  extra2,picture,picture_ipc,picture_width,picture_height,sha256
+  from sr_song_info where station_name = 'sr000.silentradiance.com'" | mysql -s -h silentradiance.com -u station_recorder sr
+
+
+
+

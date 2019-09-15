@@ -1,0 +1,30 @@
+
+export SR_BIN="${SR_BIN:-/usr/local/bin}"
+export STATION_NAME=$1
+
+# tturn off ctrls in case it is placed in the terminal - qould pause the exp[loration
+stty stop \255
+stty -ixon
+
+# $Revision: 1.13 $
+# note - call build_albums_from_songs first as a maintenance job
+# need to use journals, etc.
+# this is messy, meeds own directory MYSQK_OWD, directories and synlinks set up as sio
+
+# echo add limit 1 for testing
+echo "select c.station_name,c.cd_short_name,f.folder,f.unescaped_folder,null,
+   null,null,null,null
+ from sr_cds c,sr_folders f
+where c.station_name='$STATION_NAME'
+  and c.image_url is null
+and c.station_name = f.station_name  
+  and c.cd_short_name = f.cd_short_name
+  order by c.station_name,c.cd_short_name,f.folder;" | 
+ mysql -u automatic_maintenance -h dtb.silentradiance.com -s sr | $SR_BIN/randomize 325894  >allfiles.txt 
+#    mysql -u automatic_maintenance -h dtb.silentradiance.com -s sr \
+#    | head -50  >allfiles.txt 
+#cat >/dev/null
+    
+snobol4 $SR_BIN/scrape_all_album_images.sbl <allfiles.txt >g.sql 
+ mysql <g.sql -u automatic_maintenance -h dtb.silentradiance.com -s sr | tee allsql_results.txt
+

@@ -1,0 +1,34 @@
+
+# requires libglm
+
+
+
+
+libprojectm is just opengl so this will work WELL
+Also has the HLSL -> GLSL that can be useful for modling things.
+
+copied projectM-opengl.h over - probably was configured
+in libprojectM
+
+
+
+cp src/libprojectM/projectM-opengl.h \
+ ~/opencvs/SilentRadiance/linux/client/src/display
+cp ./src/libprojectM/projectM.hpp \
+ ~/opencvs/SilentRadiance/linux/client/src/display
+cp ./src/libprojectM/dlldefs.h \
+ ~/opencvs/SilentRadiance/linux/client/src/display/dlldefs_linux.h
+cp ./src/libprojectM/event.h \
+ ~/opencvs/SilentRadiance/linux/client/src/display/event_linux.h
+cp ./src/libprojectM/fatal.h \
+ ~/opencvs/SilentRadiance/linux/client/src/display/fatal_linux.h
+cp ./src/libprojectM/PCM.h \
+ ~/opencvs/SilentRadiance/linux/client/src/display/PCM_linux.h
+cp ./src/libprojectM/PCM.hpp \
+ ~/opencvs/SilentRadiance/linux/client/src/display/PCM_linux.hpp
+cp ./src/libprojectM/Common.hpp \
+ ~/opencvs/SilentRadiance/linux/client/src/display/Common_linux.hpp
+# note - android has a different projectM.hpp, dlldefs.h, event.h fatal.h
+mkdir  ~/opencvs/SilentRadiance/linux/client/src/display/Renderer
+cp ./src/libprojectM/Renderer/*.hpp \
+  ~/opencvs/SilentRadiance/linux/client/src/display/Renderer

@@ -1,0 +1,45 @@
+1. Title of the track, as listed on the commercially released recoding
+2. Name of the featured artist, as listed on the commercially releases recordeing.
+
+3. ISRRC - if not there combinatiopn of 
+the album name and the marketing label.
+
+
+1. service provider
+2. reporting category --- ?
+3. id o fteh recirudbng itseklf
+4. audience measurement
+
+
+
+
+
+Name of the Service
+Transmission Category
+
+
+Title of the track
+name of featured artist
+ISRC - or 
+if not there combinatiopn of
+the album name and the marketing label.
+
+
+
+Audience measurement - 
+actual total percormances - per play , per listener.
+
+
+
+
+
+Service provider - name of service and distance disco
+artist title isrc
+
+
+
+
+
+
+
+Filename 

@@ -1,0 +1,15 @@
+
+
+*	$Revision: 1.1 $
+* build an ip location database in C from the db5 csv
+* we only care about latitude and longitude in this version, and only
+* are looking at ipv4
+*
+* format:
+* input:
+*   csv
+* "from","to","countrycode","country","state","city","lat","long"^M
+*
+* output:
+* ip_location ipv4_locations[] = {
+     (ip_location) {*  

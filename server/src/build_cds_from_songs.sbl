@@ -1,0 +1,161 @@
+
+	tab = char(9)
+	pattern = break(tab) . the_station_name tab
++		  break(tab) . the_filename tab
++		  break(tab) . the_unescaped_filename tab
++		  break(tab) . the_ean tab
++		  break(tab) . the_featured_artist tab
++		  break(tab) . the_album_title tab
++		  break(tab) . the_marketing_label tab
++		  break(tab) . the_year tab
++		  break(tab) . the_genre tab
++		  break(tab) . the_extra1 tab
++		  arbno(any(&alphabet)) . the_extra2  rpos(0)
+
+	&anchor = 0
+	no_slash = &alphabet
+	no_slash '/' = ''
+
+	allnull = 'NULL' rpos(0)
+	&anchor = 1
+
+	:(to_functions)
+done_functions
+
+
+
+
+loop		&anchor = 1
+	x = input	:f(endd)
+	x pattern	:f(error_huh)
+	the_station_name 	allnull = ''
+	the_filename 		allnull = ''
+	the_unescaped_filename	allnull = ''
+	the_ean			allnull = ''
+	the_featured_artist	allnull = ''
+	the_album_title		allnull = ''
+	the_marketing_label	allnull = ''
+	the_year		allnull = ''
+	the_genre		allnull = ''
+	the_extra1		allnull = ''
+	the_extra2		allnull = ''
+	
+	
+	the_folder = the_filename
+	the_unescaped_folder = the_unescaped_filename
+	&anchor = 0
+	the_folder '/' arbno(any(no_slash)) ( "'" | "" ) . finit rpos(0) = finit
+	the_unescaped_folder '/' arbno(any(no_slash)) ( "" | "" ) . finit rpos(0) = finit
+
+*	terminal = 't ' the_folder
+	the_folder ( '/' arbno(any(no_slash)) '/'  ( 'CD' | 'cd' ) span('0123456789') )  . last_folder	 :s(semilast)
+* well, quasi last folder sometime sis CD123456dfldshdljkhdljkdhjlkdffd/cd1/
+	the_folder '/' arbno(any(no_slash)) . last_folder rpos(0)
+semilast
+	
+	&anchor = 1 
+	
+	the_folder ('./' | '' ) break('/') . rough_label
+	&anchor = 0
+ll3	rough_label '_' = ' '	:s(ll3)
+
+	&anchor = 1
+* 	terminal = 'last_fodler ' last_folder
+	cd_short_name = ''
+	cd_short_name_cd = ''
+	last_folder break('-') . cd_short_name '-' arbno(any(&alphabet))  ( ( 'CD' | 'cd' ) span('0123456789') )  . cd_short_name_cd :s(has_multiple_cds)
+	last_folder break('-') . cd_short_name
+has_multiple_cds
+	ident(cd_short_name_cd,'') :s(no_cd_number)
+*	terminal = 'aha ' cd_short_name_cd
+	cd_short_name = cd_short_name '-' cd_short_name_cd
+no_cd_number
+	&anchor = 0
+l888	cd_short_name '/' = ''	:s(l888)
+	&anchor = 1
+*	terminal = '		' cd_short_name	
+	ident(cd_short_name,'')	:s(loop)
+		
+	output = 'insert into sr_cds(station_name,cd_short_name,title,artist,'
++	  'label,catalogue)'
++                  ' select ' q(the_station_name) ',' q(cd_short_name)  ','
++                 q(the_album_title) ',' q(the_featured_artist) ',' q(the_marketing_label) ',' q(cd_short_name) 
++               ' where not exists (select 1 from sr_cds where station_name= ' q(the_station_name)
++               ' and cd_short_name = ' q(cd_short_name) ');'
+
+	output = 'insert into sr_folders(station_name,cd_short_name,folder,unescaped_folder)'
++                  ' select ' q(the_station_name) ',' q(cd_short_name) ',' q(the_folder) ',' q(the_unescaped_folder)
++               ' where not exists (select 1 from sr_folders where station_name= ' q(the_station_name)
++               ' and folder = ' q(the_folder) ');'
+
+	output = 'update  sr_folders set cd_short_name = ' q(cd_short_name) ' where station_name= ' q(the_station_name)
++               ' and folder = ' q(the_folder) ';'
+
+
+	output = 'update sr_song_info set cd_short_name = '  q(cd_short_name) ', folder = ' q(the_folder)
++              ' where  station_name= ' q(the_station_name) ' and filename = ' q(the_filename) ';'
+	:(loop)
+
+error_huh	terminal = 'error: ' x
+	:(loop)
+
+
+
+
+
+to_functions
+
+
+
+	define('q(xin)') :(done_q)
+q       &anchor = 0   
+	ident(xin,'') :s(qnull)
+ql0     xin "\\" = "fdsjkfslddsjkl" :s(ql0)
+ql1     xin "\'" = 'hsfdakfahfiue' :s(ql1)
+ql2     xin "'" = 'hsfdakfahfiue' :s(ql2)
+ql3     xin 'hsfdakfahfiue' = "''" :s(ql3) 
+ql4     xin "\" rpos(0) = ''   :s(ql4)
+ql5     xin "fdsjkfslddsjkl" = "\\"     :s(ql5)
+	&anchor = 1
+	q = "'" xin "'"
+	:(return)
+qnull   q = 'NULL'
+	:(return)
+done_q
+
+	define('r(xin)') :(done_r)
+r       ident(xin,'') :s(rnull)
+	r = xin
+	:(return)
+rnull
+	r = 'NULL'
+	:(return)
+
+done_r
+
+	define('d(xin)p1,p2') :(done_d)
+d       ident(xin,'') :s(dnull)
+	xin number . p1 '.' ( anumber anumber anumber anumber anumber anumber ) . p2 rpos(0)    = p1 p2 :s(dok)
+	xin number . p1 '.' ( anumber anumber anumber anumber anumber ) . p2 rpos(0)	    = p1 p2 '0'     :s(dok)
+	xin number . p1 '.' ( anumber anumber anumber anumber ) . p2 rpos(0)		    = p1 p2  '00'   :s(dok)
+	xin number . p1 '.' ( anumber anumber anumber ) . p2 rpos(0)			    = p1 p2 '000'   :s(dok)
+	xin number . p1 '.' ( anumber anumber ) . p2 rpos(0)				    = p1 p2 '0000'  :s(dok)
+	xin number . p1 '.' ( anumber ) . p2 rpos(0)					    = p1 p2 '00000' :s(dok)
+	xin number . p1 '.' '' . p2 rpos(0)						     = p1 p2 '000000'	:s(dok)
+	xin number . p1 '' . p2 rpos(0)							 = p1 p2  '000000'       :s(dok)
+	d = 'cast((' xin '*1000000.) as unsigned)'
+	:(return)
+	
+dok
+	d = xin
+	:(return)
+dnull
+	d = 'NULL'
+	:(return)
+
+done_d
+
+	:(done_functions)
+
+endd
+end

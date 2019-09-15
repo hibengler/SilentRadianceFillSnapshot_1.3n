@@ -1,0 +1,67 @@
+export MYSQL_PWD=fdfdld   
+# ^^^ for the automatic_maintenance user
+
+# first try to format the directories as
+# CODE001-Artist_stuff-Album_name/01 - Artist Stuff - song name.???
+# Then run the radio station through the tracklist--- playnow.sh on the station server
+
+
+
+# then - if not keeping up, on the station computer:
+redo_all_songs_dat
+and on the web servers:
+redo_all_playlist_log - well this is for the reporting of the number of users - less important right now.
+
+
+#Then  something else
+
+
+
+
+# Then 
+build_cds_from_songs reggaeton.silentradiance.com
+#	calls build_cds_from_songs.sbl
+inserts into sr_cds 
+
+#then on kcd.com - in a vnc window
+cd ~/opencvs/SilentRadiance/linux/server/src
+mkdir k
+cd k
+export SR_BIN=..
+export SR_BIN=..
+scrape_all_album_images ds.silentradiance.com
+
+# for reggaeton I found the pics myself, but other tables get populated.
+It updates sr_cds - sets up sr_cd_artists, sr_artists, sr_cd_track_artists, etc.
+
+This takes a while, and has issues - issues that should be lookd into - yo
+
+Then scp -p -r merch and raw to the web server
+
+
+
+
+
+This one needs burner, or something to do the 3d: works on silent1 but slow
+$SR_BIN/playlist_int_video_demos reggaeton.silentradiance.com
+
+export PATH=$PATH:~/opencvs/SilentRadiance/Linux/client/src
+Copy or reference to all songs
+cd to that directory (usually /t/something
+scp -P 26 -p -r z@chain.killercool.com:sr/playlist5/Prime_Records .
+#And get a playlist (made to run faster than the songs so you can hit and beat the moving target.
+scp -P 26 -p -r z@chain.killercool.com:sr/playlist5/playlist.txt .
+#z@chain.killercool.com's passw
+scp -P 26 -p -r z@chain.killercool.com:sr/playlist5/songs.dat .
+#z@chain.killercool.com's passw
+
+export MYSQL_PWD=automatic_maintenance_pwd
+
+playlist_into_video_demos playlist.txt
+
+scp -P 26 -p -r video killercool.com:/var/www/reggaeton.silentradiance.com
+
+songs_to_consumables reggaeton.silentradiance.com
+
+
+

@@ -1,0 +1,10 @@
+cd '/media/hib/Seagate Backup Plus Drive/PRIME CATALOGUE'
+
+# make new directories
+find . -type d | awk '{print "mkdir -p ~/prime/'\''" $0 "'\''"}' | bash
+
+# copy all non wav files
+find . -type f | grep -v .wav | awk '{print "cp -p '\''" $0 "'\'' ~/prime/'\''" $0 "'\''"}' | bash &
+
+# copy all wav files with ffmpeg
+find . -type f | grep  .wav | awk '{print "ffmpeg -i  '\''" $0 "'\'' ~/prime/'\''" $0 "'\''.flac"}' >/tmp/l
